@@ -6,15 +6,49 @@ use Zumba\Util\JsonSerializer;
 
 class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 
-	public function testSerializeScalar() {
-		$serializer = new JsonSerializer();
+	/**
+	 * Serializer instance
+	 *
+	 * @var Zumba\util\JsonSerializer
+	 */
+	protected $serializer;
 
-		$this->assertSame('"testing"', $serializer->serialize('testing'));
-		$this->assertSame('123', $serializer->serialize(123));
-		$this->assertSame('17.2', $serializer->serialize(17.2));
-		$this->assertSame('true', $serializer->serialize(true));
-		$this->assertSame('false', $serializer->serialize(false));
-		$this->assertSame('null', $serializer->serialize(null));
+	/**
+	 * Test case setup
+	 *
+	 * @return void
+	 */
+	public function setUp() {
+		parent::setUp();
+		$this->serializer = new JsonSerializer();
+	}
+
+	/**
+	 * Test serialization of scalar values
+	 *
+	 * @dataProvider scalarData
+	 * @param mixed $scalar
+	 * @param strign $jsoned
+	 * @return void
+	 */
+	public function testSerializeScalar($scalar, $jsoned) {
+		$this->assertSame($jsoned, $this->serializer->serialize($scalar));
+	}
+
+	/**
+	 * List of scalar data
+	 *
+	 * @return array
+	 */
+	public function scalarData() {
+		return array(
+			array('testing', '"testing"'),
+			array(123, '123'),
+			array(17.2, '17.2'),
+			array(true, 'true'),
+			array(false, 'false'),
+			array(null, 'null')
+		);
 	}
 
 }
