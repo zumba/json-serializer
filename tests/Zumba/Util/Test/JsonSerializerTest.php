@@ -144,4 +144,31 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSame($expected, $this->serializer->serialize($array));
 	}
 
+	/**
+	 * Test unserialization of objects
+	 *
+	 * @return void
+	 */
+	public function testUnserializeObjects() {
+		$serialized = '{"@type":"stdClass"}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertInstanceOf('stdClass', $obj);
+
+		$serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $obj);
+
+		$serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertInstanceOf('Zumba\Util\Test\SupportClasses\AllVisibilities', $obj);
+		$this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $obj->pub);
+		$this->assertAttributeSame('protected', 'prot', $obj);
+		$this->assertAttributeSame('dont tell anyone', 'priv', $obj);
+
+		$serialized = '{"instance":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
+		$array = $this->serializer->unserialize($serialized);
+		$this->assertTrue(is_array($array));
+		$this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $array['instance']);
+	}
+
 }

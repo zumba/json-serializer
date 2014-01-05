@@ -118,11 +118,36 @@ class JsonSerializer {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
-		if (is_array($value) && !isset($value[static::CLASS_IDENTIFIER_KEY])) {
-			return array_map(array($this, __FUNCTION__), $value);
+		if (is_array($value)) {
+			return isset($value[static::CLASS_IDENTIFIER_KEY]) ?
+				$this->unserializeObject($value) :
+				array_map(array($this, __FUNCTION__), $value);
 		}
-		// @todo implement
-		throw new Exception('Not implemented');
+		throw new Exception('Not supported');
+	}
+
+	/**
+	 * Convert the serialized array into an object
+	 *
+	 * @param aray $value
+	 * @return object
+	 * @throws Exception
+	 */
+	protected function unserializeObject($value) {
+		$className = $value[static::CLASS_IDENTIFIER_KEY];
+		unset($value[static::CLASS_IDENTIFIER_KEY]);
+
+		if (!class_exists($className)) {
+			throw new Exception('Unable to find class ' . $className);
+		}
+		$ref = new ReflectionClass($className);
+		$obj = $ref->newInstanceWithoutConstructor();
+		foreach ($value as $property => $propertyValue) {
+			$propRef = $ref->getProperty($property);
+			$propRef->setAccessible(true);
+			$propRef->setValue($obj, $this->unserializeData($propertyValue));
+		}
+		return $obj;
 	}
 
 }
