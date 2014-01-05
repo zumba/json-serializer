@@ -16,7 +16,7 @@ class JsonSerializer {
 	 * @throws Exception
 	 */
 	public function serialize($value) {
-		return json_encode($this->_serializeData($value));
+		return json_encode($this->serializeData($value));
 	}
 
 	/**
@@ -26,7 +26,7 @@ class JsonSerializer {
 	 * @return mixed
 	 */
 	public function unserialize($value) {
-		return $this->_unserializeData(json_decode($value, true));
+		return $this->unserializeData(json_decode($value, true));
 	}
 
 	/**
@@ -36,7 +36,7 @@ class JsonSerializer {
 	 * @return mixed
 	 * @throws Exception
 	 */
-	protected function _serializeData($value) {
+	protected function serializeData($value) {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
@@ -56,7 +56,7 @@ class JsonSerializer {
 	 * @param mixed $value
 	 * @return mixed
 	 */
-	protected function _unserializeData($value) {
+	protected function unserializeData($value) {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
