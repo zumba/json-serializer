@@ -71,7 +71,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	 */
 	public function testSerializeResource() {
 		$this->setExpectedException('Exception');
-		$this->serializer->serialize(fopen(__FILE__));
+		$this->serializer->serialize(fopen(__FILE__, 'r'));
 	}
 
 	/**
