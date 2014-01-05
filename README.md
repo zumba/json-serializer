@@ -8,6 +8,9 @@ This is a library to serialize PHP variables into JSON format. You can even seri
 This library also come with a method to unserialize the JSON formatted, converting the data back
 to their original objects.
 
+This project should not be confused with `JsonSerializable` from PHP 5.4. This interface is used to inform
+`json_encode` how to encode the object. There is no unserialization with this interface.
+
 *Json Serializer requires PHP >= 5.4*
 
 ## Example
