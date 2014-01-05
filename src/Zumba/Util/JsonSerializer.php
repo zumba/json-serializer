@@ -43,6 +43,9 @@ class JsonSerializer {
 		if (is_resource($value)) {
 			throw new Exception('Resource is not supported in JsonSerializer');
 		}
+		if (is_array($value)) {
+			return array_map(array($this, __FUNCTION__), $value);
+		}
 		// @todo implement
 		throw new Exception('Not implemented');
 	}
@@ -56,6 +59,9 @@ class JsonSerializer {
 	protected function _unserializeData($value) {
 		if (is_scalar($value) || $value === null) {
 			return $value;
+		}
+		if (is_array($value) && !isset($value[static::CLASS_IDENTIFIER_KEY])) {
+			return array_map(array($this, __FUNCTION__), $value);
 		}
 		// @todo implement
 		throw new Exception('Not implemented');

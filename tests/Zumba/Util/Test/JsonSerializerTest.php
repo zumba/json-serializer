@@ -73,4 +73,45 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->serializer->serialize(fopen(__FILE__));
 	}
 
+	/**
+	 * Test serialization of array without objects
+	 *
+	 * @dataProvider arrayNoObjectData
+	 * @param array $array
+	 * @param strign $jsoned
+	 * @return void
+	 */
+	public function testSerializeArrayNoObject($array, $jsoned) {
+		$this->assertSame($jsoned, $this->serializer->serialize($array));
+	}
+
+	/**
+	 * Test unserialization of array without objects
+	 *
+	 * @dataProvider arrayNoObjectData
+	 * @param array $array
+	 * @param strign $jsoned
+	 * @return void
+	 */
+	public function testUnserializeArrayNoObject($array, $jsoned) {
+		$this->assertSame($array, $this->serializer->unserialize($jsoned));
+	}
+
+	/**
+	 * List of array data
+	 *
+	 * @return array
+	 */
+	public function arrayNoObjectData() {
+		return array(
+			array(array(1, 2, 3), '[1,2,3]'),
+			array(array(1, 'abc', false), '[1,"abc",false]'),
+			array(array('a' => 1, 'b' => 2, 'c' => 3), '{"a":1,"b":2,"c":3}'),
+			array(array('integer' => 1, 'string' => 'abc', 'bool' => false), '{"integer":1,"string":"abc","bool":false}'),
+			array(array(1, array('nested')), '[1,["nested"]]'),
+			array(array('integer' => 1, 'array' => array('nested')), '{"integer":1,"array":["nested"]}'),
+			array(array('integer' => 1, 'array' => array('nested' => 'object')), '{"integer":1,"array":{"nested":"object"}}'),
+		);
+	}
+
 }
