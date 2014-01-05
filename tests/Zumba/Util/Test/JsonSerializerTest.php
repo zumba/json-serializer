@@ -9,7 +9,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	/**
 	 * Serializer instance
 	 *
-	 * @var Zumba\util\JsonSerializer
+	 * @var Zumba\Util\JsonSerializer
 	 */
 	protected $serializer;
 
@@ -61,6 +61,16 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 			array(false, 'false'),
 			array(null, 'null')
 		);
+	}
+
+	/**
+	 * Test the serialization of resources
+	 *
+	 * @return void
+	 */
+	public function testSerializeResource() {
+		$this->setExpectedException('Exception');
+		$this->serializer->serialize(fopen(__FILE__));
 	}
 
 }

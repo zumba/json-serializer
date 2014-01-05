@@ -2,6 +2,8 @@
 
 namespace Zumba\Util;
 
+use Exception;
+
 class JsonSerializer {
 
 	const CLASS_IDENTIFIER_KEY = '@type';
@@ -11,6 +13,7 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return string JSON encoded
+	 * @throws Exception
 	 */
 	public function serialize($value) {
 		return json_encode($this->_serializeData($value));
@@ -31,13 +34,17 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return mixed
+	 * @throws Exception
 	 */
 	protected function _serializeData($value) {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
+		if (is_resource($value)) {
+			throw new Exception('Resource is not supported in JsonSerializer');
+		}
 		// @todo implement
-		throw new \Exception('Not implemented');
+		throw new Exception('Not implemented');
 	}
 
 	/**
@@ -51,7 +58,7 @@ class JsonSerializer {
 			return $value;
 		}
 		// @todo implement
-		throw new \Exception('Not implemented');
+		throw new Exception('Not implemented');
 	}
 
 }
