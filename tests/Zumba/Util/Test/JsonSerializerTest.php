@@ -3,6 +3,7 @@
 namespace Zumba\Util\Test;
 
 use Zumba\Util\JsonSerializer;
+use stdClass;
 
 class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 
@@ -112,6 +113,35 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 			array(array('integer' => 1, 'array' => array('nested')), '{"integer":1,"array":["nested"]}'),
 			array(array('integer' => 1, 'array' => array('nested' => 'object')), '{"integer":1,"array":{"nested":"object"}}'),
 		);
+	}
+
+	/**
+	 * Test serialization of objects
+	 *
+	 * @return void
+	 */
+	public function testSerializeObject() {
+		$obj = new stdClass();
+		$this->assertSame('{"@type":"stdClass"}', $this->serializer->serialize($obj));
+
+		$obj = $empty = new SupportClasses\EmptyClass();
+		$this->assertSame('{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}', $this->serializer->serialize($obj));
+
+		$obj = new SupportClasses\AllVisibilities();
+		$expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"this is public","prot":"protected","priv":"dont tell anyone"}';
+		$this->assertSame($expected, $this->serializer->serialize($obj));
+
+		$obj->pub = 'new value';
+		$expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"new value","prot":"protected","priv":"dont tell anyone"}';
+		$this->assertSame($expected, $this->serializer->serialize($obj));
+
+		$obj->pub = $empty;
+		$expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
+		$this->assertSame($expected, $this->serializer->serialize($obj));
+
+		$array = array('instance' => $empty);
+		$expected = '{"instance":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
+		$this->assertSame($expected, $this->serializer->serialize($array));
 	}
 
 }

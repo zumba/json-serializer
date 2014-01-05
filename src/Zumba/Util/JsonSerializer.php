@@ -3,6 +3,7 @@
 namespace Zumba\Util;
 
 use Exception;
+use ReflectionClass;
 
 class JsonSerializer {
 
@@ -46,8 +47,65 @@ class JsonSerializer {
 		if (is_array($value)) {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
-		// @todo implement
-		throw new Exception('Not implemented');
+		if (is_object($value)) {
+			if ($value instanceof \Closure) {
+				throw new Exception('Closures are not supported in JsonSerializer');
+			}
+			return $this->serializeObject($value);
+		}
+		throw new Exception('Not supported');
+	}
+
+	/**
+	 * Extract the data from an object
+	 *
+	 * @param object $value
+	 * @return array
+	 */
+	protected function serializeObject($value) {
+		$ref = new ReflectionClass($value);
+
+		$paramsToSerialize = $this->getObjectProperties($ref, $value);
+		$data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
+		$data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
+		return $data;
+	}
+
+	/**
+	 * Return the list of properties to be serialized
+	 *
+	 * @param ReflectionClass $ref
+	 * @param object $value
+	 * @return array
+	 */
+	protected function getObjectProperties($ref, $value) {
+		if ($value instanceof Serializable) {
+			return $value->__sleep();
+		}
+
+		$props = array();
+		foreach ($ref->getProperties() as $prop) {
+			$props[] = $prop->getName();
+		}
+		return $props;
+	}
+
+	/**
+	 * Extract the object data
+	 *
+	 * @param object $value
+	 * @param ReflectionClass $ref
+	 * @param array $properties
+	 * @return array
+	 */
+	protected function extractObjectData($value, $ref, $properties) {
+		$data = array();
+		foreach ($properties as $property) {
+			$propRef = $ref->getProperty($property);
+			$propRef->setAccessible(true);
+			$data[$property] = $propRef->getValue($value);
+		}
+		return $data;
 	}
 
 	/**
