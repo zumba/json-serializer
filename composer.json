@@ -1,0 +1,29 @@
+{
+    "name": "zumba/json-serializer",
+    "type": "library",
+    "description": "Serialize PHP variables, including objects, in JSON format. Support to unserialize it too.",
+    "keywords": ["json", "serialize", "serializer"],
+    "homepage": "http://engineering.zumba.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Zumba Fitness, LLC"
+        },
+        {
+            "name": "Juan Basso",
+            "email": "juan.basso@zumba.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4"
+    },
+	"require-dev": {
+		"phpunit/phpunit": "3.7.*"
+	},
+    "autoload": {
+        "psr-0": {
+            "Zumba\\Util": "src/",
+            "Zumba\\Util\\Test": "tests/"
+        }
+    }
+}

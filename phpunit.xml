@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit backupGlobals="false"
+		 backupStaticAttributes="false"
+		 convertErrorsToExceptions="true"
+		 convertNoticesToExceptions="true"
+		 convertWarningsToExceptions="true"
+		 processIsolation="false"
+		 stopOnFailure="false"
+		 syntaxCheck="true"
+		 strict="true"
+		 colors="true">
+	<testsuites>
+		<testsuite>
+			<directory>./tests/Zumba/Util</directory>
+		</testsuite>
+	</testsuites>
+	<filter>
+		<whitelist addUncoveredFilesFromWhitelist="true">
+			<directory>./src/Zumba</directory>
+		</whitelist>
+	</filter>
+</phpunit>
