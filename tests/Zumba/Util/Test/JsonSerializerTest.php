@@ -36,6 +36,18 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Test unserialization of scalar values
+	 *
+	 * @dataProvider scalarData
+	 * @param mixed $scalar
+	 * @param strign $jsoned
+	 * @return void
+	 */
+	public function testUnserializeScalar($scalar, $jsoned) {
+		$this->assertSame($scalar, $this->serializer->unserialize($jsoned));
+	}
+
+	/**
 	 * List of scalar data
 	 *
 	 * @return array
