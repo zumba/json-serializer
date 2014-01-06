@@ -47,13 +47,10 @@ class JsonSerializer {
 		if (is_array($value)) {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
-		if (is_object($value)) {
-			if ($value instanceof \Closure) {
-				throw new Exception('Closures are not supported in JsonSerializer');
-			}
-			return $this->serializeObject($value);
+		if ($value instanceof \Closure) {
+			throw new Exception('Closures are not supported in JsonSerializer');
 		}
-		throw new Exception('Not supported');
+		return $this->serializeObject($value);
 	}
 
 	/**
@@ -118,12 +115,9 @@ class JsonSerializer {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
-		if (is_array($value)) {
-			return isset($value[static::CLASS_IDENTIFIER_KEY]) ?
-				$this->unserializeObject($value) :
-				array_map(array($this, __FUNCTION__), $value);
-		}
-		throw new Exception('Not supported');
+		return isset($value[static::CLASS_IDENTIFIER_KEY]) ?
+			$this->unserializeObject($value) :
+			array_map(array($this, __FUNCTION__), $value);
 	}
 
 	/**
