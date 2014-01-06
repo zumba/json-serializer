@@ -198,4 +198,15 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertTrue($obj->woke);
 	}
 
+	/**
+	 * Test unserialize of unknown class
+	 *
+	 * @return void
+	 */
+	public function testUnserializeUnknownClass() {
+		$this->setExpectedException('Exception');
+		$serialized = '{"@type":"UnknownClass"}';
+		$this->serializer->unserialize($serialized);
+	}
+
 }
