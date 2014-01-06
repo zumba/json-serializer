@@ -171,4 +171,19 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $array['instance']);
 	}
 
+	/**
+	 * Test magic serialization methods
+	 *
+	 * @return void
+	 */
+	public function testSerializationMagicMethods() {
+		$obj = new SupportClasses\MagicClass();
+		$serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\MagicClass","show":true}';
+		$this->assertSame($serialized, $this->serializer->serialize($obj));
+		$this->assertFalse($obj->woke);
+
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertTrue($obj->woke);
+	}
+
 }

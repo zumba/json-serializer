@@ -79,7 +79,7 @@ class JsonSerializer {
 	 * @return array
 	 */
 	protected function getObjectProperties($ref, $value) {
-		if ($value instanceof Serializable) {
+		if (method_exists($value, '__sleep')) {
 			return $value->__sleep();
 		}
 
@@ -146,6 +146,9 @@ class JsonSerializer {
 			$propRef = $ref->getProperty($property);
 			$propRef->setAccessible(true);
 			$propRef->setValue($obj, $this->unserializeData($propertyValue));
+		}
+		if (method_exists($obj, '__wakeup')) {
+			$obj->__wakeup();
 		}
 		return $obj;
 	}
