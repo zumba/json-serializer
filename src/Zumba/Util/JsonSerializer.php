@@ -4,6 +4,7 @@ namespace Zumba\Util;
 
 use Exception;
 use ReflectionClass;
+use ReflectionException;
 
 class JsonSerializer {
 
@@ -84,7 +85,7 @@ class JsonSerializer {
 		foreach ($ref->getProperties() as $prop) {
 			$props[] = $prop->getName();
 		}
-		return $props;
+		return array_unique(array_merge($props, array_keys(get_object_vars($value))));
 	}
 
 	/**
@@ -98,9 +99,13 @@ class JsonSerializer {
 	protected function extractObjectData($value, $ref, $properties) {
 		$data = array();
 		foreach ($properties as $property) {
-			$propRef = $ref->getProperty($property);
-			$propRef->setAccessible(true);
-			$data[$property] = $propRef->getValue($value);
+			try {
+				$propRef = $ref->getProperty($property);
+				$propRef->setAccessible(true);
+				$data[$property] = $propRef->getValue($value);
+			} catch (ReflectionException $e) {
+				$data[$property] = $value->$property;
+			}
 		}
 		return $data;
 	}
@@ -137,9 +142,13 @@ class JsonSerializer {
 		$ref = new ReflectionClass($className);
 		$obj = $ref->newInstanceWithoutConstructor();
 		foreach ($value as $property => $propertyValue) {
-			$propRef = $ref->getProperty($property);
-			$propRef->setAccessible(true);
-			$propRef->setValue($obj, $this->unserializeData($propertyValue));
+			try {
+				$propRef = $ref->getProperty($property);
+				$propRef->setAccessible(true);
+				$propRef->setValue($obj, $this->unserializeData($propertyValue));
+			} catch (ReflectionException $e) {
+				$obj->$property = $propertyValue;
+			}
 		}
 		if (method_exists($obj, '__wakeup')) {
 			$obj->__wakeup();

@@ -209,4 +209,22 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->serializer->unserialize($serialized);
 	}
 
+	/**
+	 * Test serialization of undeclared properties
+	 *
+	 * @return void
+	 */
+	public function testSerializationUndeclaredProperties() {
+		$obj = new stdClass();
+		$obj->param1 = true;
+		$obj->param2 = 'store me, please';
+		$serialized = '{"@type":"stdClass","param1":true,"param2":"store me, please"}';
+		$this->assertSame($serialized, $this->serializer->serialize($obj));
+
+		$obj2 = $this->serializer->unserialize($serialized);
+		$this->assertInstanceOf('stdClass', $obj2);
+		$this->assertTrue($obj2->param1);
+		$this->assertSame('store me, please', $obj2->param2);
+	}
+
 }
