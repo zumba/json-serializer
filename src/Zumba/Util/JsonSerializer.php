@@ -5,10 +5,34 @@ namespace Zumba\Util;
 use Exception;
 use ReflectionClass;
 use ReflectionException;
+use SplObjectStorage;
 
 class JsonSerializer {
 
 	const CLASS_IDENTIFIER_KEY = '@type';
+
+	/**
+	 * Storage for object
+	 *
+	 * Used for recursion
+	 *
+	 * @var SplObjectStorage
+	 */
+	protected $objectStorage;
+
+	/**
+	 * Object mapping for recursion
+	 *
+	 * @var array
+	 */
+	protected $objectMapping = array();
+
+	/**
+	 * Object mapping index
+	 *
+	 * @var integer
+	 */
+	protected $objectMappingIndex = 0;
 
 	/**
 	 * Serialize the value in JSON
@@ -18,6 +42,7 @@ class JsonSerializer {
 	 * @throws Exception
 	 */
 	public function serialize($value) {
+		$this->reset();
 		return json_encode($this->serializeData($value));
 	}
 
@@ -28,6 +53,7 @@ class JsonSerializer {
 	 * @return mixed
 	 */
 	public function unserialize($value) {
+		$this->reset();
 		return $this->unserializeData(json_decode($value, true));
 	}
 
@@ -62,6 +88,11 @@ class JsonSerializer {
 	 */
 	protected function serializeObject($value) {
 		$ref = new ReflectionClass($value);
+
+		if ($this->objectStorage->contains($value)) {
+			return array(static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]);
+		}
+		$this->objectStorage->attach($value, $this->objectMappingIndex++);
 
 		$paramsToSerialize = $this->getObjectProperties($ref, $value);
 		$data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
@@ -136,11 +167,17 @@ class JsonSerializer {
 		$className = $value[static::CLASS_IDENTIFIER_KEY];
 		unset($value[static::CLASS_IDENTIFIER_KEY]);
 
+		if ($className[0] === '@') {
+			$index = substr($className, 1);
+			return $this->objectMapping[$index];
+		}
+
 		if (!class_exists($className)) {
 			throw new Exception('Unable to find class ' . $className);
 		}
 		$ref = new ReflectionClass($className);
 		$obj = $ref->newInstanceWithoutConstructor();
+		$this->objectMapping[$this->objectMappingIndex++] = $obj;
 		foreach ($value as $property => $propertyValue) {
 			try {
 				$propRef = $ref->getProperty($property);
@@ -154,6 +191,17 @@ class JsonSerializer {
 			$obj->__wakeup();
 		}
 		return $obj;
+	}
+
+	/**
+	 * Reset variables
+	 *
+	 * @return void
+	 */
+	protected function reset() {
+		$this->objectStorage = new SplObjectStorage();
+		$this->objectMapping = array();
+		$this->objectMappingIndex = 0;
 	}
 
 }

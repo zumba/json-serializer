@@ -232,4 +232,46 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertSame('value', $obj->sub->key);
 	}
 
+	/**
+	 * Test serialize with recursion
+	 *
+	 * @return void
+	 */
+	public function testSerializeRecursion() {
+		$c1 = new stdClass();
+		$c1->c2 = new stdClass();
+		$c1->c2->c3 = new stdClass();
+		$c1->c2->c3->c1 = $c1;
+		$c1->something = 'ok';
+		$c1->c2->c3->ok = true;
+
+		$expected = '{"@type":"stdClass","c2":{"@type":"stdClass","c3":{"@type":"stdClass","c1":{"@type":"@0"},"ok":true}},"something":"ok"}';
+		$this->assertSame($expected, $this->serializer->serialize($c1));
+
+		$c1 = new stdClass();
+		$c1->mirror = $c1;
+		$expected = '{"@type":"stdClass","mirror":{"@type":"@0"}}';
+		$this->assertSame($expected, $this->serializer->serialize($c1));
+	}
+
+	/**
+	 * Test unserialize with recursion
+	 *
+	 * @return void
+	 */
+	public function testUnserializeRecursion() {
+		$serialized = '{"@type":"stdClass","c2":{"@type":"stdClass","c3":{"@type":"stdClass","c1":{"@type":"@0"},"ok":true}},"something":"ok"}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertTrue($obj->c2->c3->ok);
+		$this->assertSame($obj, $obj->c2->c3->c1);
+		$this->assertNotSame($obj, $obj->c2);
+
+		$serialized = '{"@type":"stdClass","c2":{"@type":"stdClass","c3":{"@type":"stdClass","c1":{"@type":"@0"},"c2":{"@type":"@1"},"c3":{"@type":"@2"}},"c3_copy":{"@type":"@2"}}}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertSame($obj, $obj->c2->c3->c1);
+		$this->assertSame($obj->c2, $obj->c2->c3->c2);
+		$this->assertSame($obj->c2->c3, $obj->c2->c3->c3);
+		$this->assertSame($obj->c2->c3_copy, $obj->c2->c3);
+	}
+
 }
