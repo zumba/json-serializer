@@ -24,6 +24,7 @@
     "autoload": {
         "psr-0": {
             "Zumba\\Util": "src/",
+            "Zumba\\Exception": "src/",
             "Zumba\\Util\\Test": "tests/"
         }
     }

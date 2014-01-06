@@ -2,10 +2,10 @@
 
 namespace Zumba\Util;
 
-use Exception;
 use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
+use Zumba\Exception\JsonSerializerException;
 
 class JsonSerializer {
 
@@ -39,7 +39,7 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return string JSON encoded
-	 * @throws Exception
+	 * @throws Zumba\Exception\JsonSerializerException
 	 */
 	public function serialize($value) {
 		$this->reset();
@@ -62,20 +62,20 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return mixed
-	 * @throws Exception
+	 * @throws Zumba\Exception\JsonSerializerException
 	 */
 	protected function serializeData($value) {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
 		if (is_resource($value)) {
-			throw new Exception('Resource is not supported in JsonSerializer');
+			throw new JsonSerializerException('Resource is not supported in JsonSerializer');
 		}
 		if (is_array($value)) {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
 		if ($value instanceof \Closure) {
-			throw new Exception('Closures are not supported in JsonSerializer');
+			throw new JsonSerializerException('Closures are not supported in JsonSerializer');
 		}
 		return $this->serializeObject($value);
 	}
@@ -161,7 +161,7 @@ class JsonSerializer {
 	 *
 	 * @param aray $value
 	 * @return object
-	 * @throws Exception
+	 * @throws Zumba\Exception\JsonSerializerException
 	 */
 	protected function unserializeObject($value) {
 		$className = $value[static::CLASS_IDENTIFIER_KEY];
@@ -173,7 +173,7 @@ class JsonSerializer {
 		}
 
 		if (!class_exists($className)) {
-			throw new Exception('Unable to find class ' . $className);
+			throw new JsonSerializerException('Unable to find class ' . $className);
 		}
 		$ref = new ReflectionClass($className);
 		$obj = $ref->newInstanceWithoutConstructor();

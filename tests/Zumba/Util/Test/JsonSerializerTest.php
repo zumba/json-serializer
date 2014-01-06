@@ -70,7 +70,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	 * @return void
 	 */
 	public function testSerializeResource() {
-		$this->setExpectedException('Exception');
+		$this->setExpectedException('Zumba\Exception\JsonSerializerException');
 		$this->serializer->serialize(fopen(__FILE__, 'r'));
 	}
 
@@ -80,7 +80,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	 * @return void
 	 */
 	public function testSerializeClosure() {
-		$this->setExpectedException('Exception');
+		$this->setExpectedException('Zumba\Exception\JsonSerializerException');
 		$this->serializer->serialize(array('func' => function() {
 			echo 'whoops';
 		}));
@@ -204,7 +204,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	 * @return void
 	 */
 	public function testUnserializeUnknownClass() {
-		$this->setExpectedException('Exception');
+		$this->setExpectedException('Zumba\Exception\JsonSerializerException');
 		$serialized = '{"@type":"UnknownClass"}';
 		$this->serializer->unserialize($serialized);
 	}
