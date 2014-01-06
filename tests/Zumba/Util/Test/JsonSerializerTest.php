@@ -75,6 +75,18 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Test the serialization of closures
+	 *
+	 * @return void
+	 */
+	public function testSerializeClosure() {
+		$this->setExpectedException('Exception');
+		$this->serializer->serialize(array('func' => function() {
+			echo 'whoops';
+		}));
+	}
+
+	/**
 	 * Test serialization of array without objects
 	 *
 	 * @dataProvider arrayNoObjectData
