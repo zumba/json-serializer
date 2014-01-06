@@ -42,3 +42,15 @@ $json = $serializer->serialize($instance);
 $restoredInstance = $serializer->unserialize($json);
 // $restoredInstance will be an instance of MyCustomClass
 ```
+
+## How to Install
+
+If you are using composer, install the package [`zumba/json-serializer`](https://packagist.org/packages/zumba/json-serializer).
+
+```
+$ composer require zumba/json-serializer
+```
+
+Or add the `zumba/json-serializer` directly in your `composer.json` file.
+
+If you are not using composer, you can just copy the files from `src` folder in your project.
