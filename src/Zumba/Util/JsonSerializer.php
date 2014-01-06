@@ -147,7 +147,7 @@ class JsonSerializer {
 				$propRef->setAccessible(true);
 				$propRef->setValue($obj, $this->unserializeData($propertyValue));
 			} catch (ReflectionException $e) {
-				$obj->$property = $propertyValue;
+				$obj->$property = $this->unserializeData($propertyValue);
 			}
 		}
 		if (method_exists($obj, '__wakeup')) {

@@ -225,6 +225,11 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf('stdClass', $obj2);
 		$this->assertTrue($obj2->param1);
 		$this->assertSame('store me, please', $obj2->param2);
+
+		$serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
+		$obj = $this->serializer->unserialize($serialized);
+		$this->assertInstanceOf('stdClass', $obj->sub);
+		$this->assertSame('value', $obj->sub->key);
 	}
 
 }
