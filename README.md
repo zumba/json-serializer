@@ -22,7 +22,7 @@ Unsupported serialization content:
 This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 5.4*
+*Json Serializer requires PHP >= 5.3.6*
 
 ## Example
 
