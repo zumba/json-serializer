@@ -57,6 +57,10 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		return array(
 			array('testing', '"testing"'),
 			array(123, '123'),
+			array(0, '0'),
+			array(0.0, '0.0'),
+			array(17.0, '17.0'),
+			array(17e1, '170.0'),
 			array(17.2, '17.2'),
 			array(true, 'true'),
 			array(false, 'false'),
@@ -124,6 +128,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 			array(array(1, array('nested')), '[1,["nested"]]'),
 			array(array('integer' => 1, 'array' => array('nested')), '{"integer":1,"array":["nested"]}'),
 			array(array('integer' => 1, 'array' => array('nested' => 'object')), '{"integer":1,"array":{"nested":"object"}}'),
+			array(array(1.0, 2, 3e1), '[1.0,2,30.0]'),
 		);
 	}
 
@@ -154,6 +159,12 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$array = array('instance' => $empty);
 		$expected = '{"instance":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
 		$this->assertSame($expected, $this->serializer->serialize($array));
+
+		$obj = new stdClass();
+		$obj->total = 10.0;
+		$obj->discount = 0.0;
+		$expected = '{"@type":"stdClass","total":10.0,"discount":0.0}';
+		$this->assertSame($expected, $this->serializer->serialize($obj));
 	}
 
 	/**
