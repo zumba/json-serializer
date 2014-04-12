@@ -10,6 +10,7 @@ use Zumba\Exception\JsonSerializerException;
 class JsonSerializer {
 
 	const CLASS_IDENTIFIER_KEY = '@type';
+	const FLOAT_ADAPTER = 'JsonSerializerFloatAdapter';
 
 	/**
 	 * Storage for object
@@ -43,7 +44,8 @@ class JsonSerializer {
 	 */
 	public function serialize($value) {
 		$this->reset();
-		return json_encode($this->serializeData($value));
+		$encoded = json_encode($this->serializeData($value));
+		return preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
 	}
 
 	/**
@@ -66,6 +68,11 @@ class JsonSerializer {
 	 */
 	protected function serializeData($value) {
 		if (is_scalar($value) || $value === null) {
+			if (is_float($value) && strpos((string)$value, '.') === false) {
+				// Because the PHP bug #50224, the float numbers with no
+				// precision numbers are converted to integers when encoded
+				$value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
+			}
 			return $value;
 		}
 		if (is_resource($value)) {
