@@ -210,6 +210,20 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
+	 * Test serialization of DateTime classes
+	 *
+	 * Some interal classes, such as DateTime, cannot be initialized with
+	 * ReflectionClass::newInstanceWithoutConstructor()
+	 *
+	 * @return void
+	 */
+	public function testSerializationOfDateTime() {
+		$date = new \DateTime('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
+		$obj = $this->serializer->unserialize($this->serializer->serialize($date));
+		$this->assertSame($date->getTimestamp(), $obj->getTimestamp());
+	}
+
+	/**
 	 * Test unserialize of unknown class
 	 *
 	 * @return void

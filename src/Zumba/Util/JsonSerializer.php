@@ -182,6 +182,13 @@ class JsonSerializer {
 		if (!class_exists($className)) {
 			throw new JsonSerializerException('Unable to find class ' . $className);
 		}
+
+		if ($className === 'DateTime') {
+			$obj = $this->restoreUsingUnserialize($className, $value);
+			$this->objectMapping[$this->objectMappingIndex++] = $obj;
+			return $obj;
+		}
+
 		$ref = new ReflectionClass($className);
 		$obj = version_compare(PHP_VERSION, '5.4.0') >= 0 ?
 			$ref->newInstanceWithoutConstructor() :
@@ -200,6 +207,12 @@ class JsonSerializer {
 			$obj->__wakeup();
 		}
 		return $obj;
+	}
+
+	protected function restoreUsingUnserialize($className, $attributes) {
+		$obj = (object)$attributes;
+		$serialized = preg_replace('|^O:\d+:"\w+":|', 'O:' . strlen($className) . ':"' . $className . '":', serialize($obj));
+		return unserialize($serialized);
 	}
 
 	/**
