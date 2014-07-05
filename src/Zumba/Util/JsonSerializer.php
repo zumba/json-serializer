@@ -73,6 +73,9 @@ class JsonSerializer {
 	 * @todo Remove when 5.3 support is dropped.
 	 */
 	protected function convertUnicode(&$encoded) {
+		if (!extension_loaded('mbstring')) {
+			return;
+		}
 		$encoded = preg_replace_callback(
 			'/\\\\u([0-9a-f]{4})/i',
 			function ($matches) {

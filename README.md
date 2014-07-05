@@ -54,3 +54,8 @@ $ composer require zumba/json-serializer
 Or add the `zumba/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
+
+## Special Note for PHP 5.3
+
+In order to support unescaped unicode characters, it is recommended to have the `mbstring` installed, otherwise unicode characters
+will be escaped in the format of `\uXXXX`.
