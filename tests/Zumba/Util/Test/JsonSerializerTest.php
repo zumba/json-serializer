@@ -64,7 +64,9 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 			array(17.2, '17.2'),
 			array(true, 'true'),
 			array(false, 'false'),
-			array(null, 'null')
+			array(null, 'null'),
+			// Non UTF8
+			array('ßåö', '"ßåö"')
 		);
 	}
 
