@@ -18,6 +18,8 @@ Supported features:
 Unsupported serialization content:
 - Resource (ie, `fopen()` response)
 - Closures
+- Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
+	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
 
 This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
