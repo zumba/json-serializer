@@ -36,17 +36,9 @@ class JsonSerializer {
 	protected $objectMappingIndex = 0;
 
 	/**
-	 * Is this PHP 5.4 or above?
-	 *
-	 * @var boolean
-	 */
-	protected $is54;
-
-	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->is54 = version_compare(PHP_VERSION, '5.4.0') >= 0;
 	}
 
 	/**
@@ -58,36 +50,8 @@ class JsonSerializer {
 	 */
 	public function serialize($value) {
 		$this->reset();
-		$encoded = json_encode($this->serializeData($value), $this->is54 ? JSON_UNESCAPED_UNICODE : 0);
-		if (!$this->is54) {
-			$this->convertUnicode($encoded);
-		}
+		$encoded = json_encode($this->serializeData($value), JSON_UNESCAPED_UNICODE);
 		return preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
-	}
-
-	/**
-	 * Implements the JSON_UNESCAPED_UNICODE in 5.3.
-	 *
-	 * @param string &$encoded JSON encoded data.
-	 * @return void
-	 * @todo Remove when 5.3 support is dropped.
-	 */
-	protected function convertUnicode(&$encoded) {
-		if (!extension_loaded('mbstring')) {
-			return;
-		}
-		$encoded = preg_replace_callback(
-			'/\\\\u([0-9a-f]{4})/i',
-			function ($matches) {
-				$sym = mb_convert_encoding(
-					pack('H*', $matches[1]),
-						'UTF-8',
-						'UTF-16'
-					);
-				return $sym;
-			},
-			$encoded
-		);
 	}
 
 	/**
@@ -232,9 +196,7 @@ class JsonSerializer {
 		}
 
 		$ref = new ReflectionClass($className);
-		$obj = $this->is54 ?
-			$ref->newInstanceWithoutConstructor() :
-			unserialize('O:' . strlen($className) . ':"' . $className . '":0:{}');
+		$obj = $ref->newInstanceWithoutConstructor();
 		$this->objectMapping[$this->objectMappingIndex++] = $obj;
 		foreach ($value as $property => $propertyValue) {
 			try {
