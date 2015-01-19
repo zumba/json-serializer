@@ -36,9 +36,17 @@ class JsonSerializer {
 	protected $objectMappingIndex = 0;
 
 	/**
+	 * Support PRESERVE_ZERO_FRACTION json option
+	 *
+	 * @var boolean
+	 */
+	protected $preserveZeroFractionSupport;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
+		$this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
 	}
 
 	/**
@@ -50,8 +58,34 @@ class JsonSerializer {
 	 */
 	public function serialize($value) {
 		$this->reset();
-		$encoded = json_encode($this->serializeData($value), JSON_UNESCAPED_UNICODE);
-		return preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
+		$encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
+		return $this->processEncodedValue($encoded);
+	}
+
+	/**
+	 * Calculate encoding options
+	 *
+	 * @return integer
+	 */
+	protected function calculateEncodeOptions() {
+		$options = JSON_UNESCAPED_UNICODE;
+		if ($this->preserveZeroFractionSupport) {
+			$options |= JSON_PRESERVE_ZERO_FRACTION;
+		}
+		return $options;
+	}
+
+	/**
+	 * Execute post-encoding actions
+	 *
+	 * @param string $encoded
+	 * @return string
+	 */
+	protected function processEncodedValue($encoded) {
+		if (!$this->preserveZeroFractionSupport) {
+			$encoded = preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
+		}
+		return $encoded;
 	}
 
 	/**
@@ -74,7 +108,7 @@ class JsonSerializer {
 	 */
 	protected function serializeData($value) {
 		if (is_scalar($value) || $value === null) {
-			if (is_float($value) && strpos((string)$value, '.') === false) {
+			if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string)$value, '.') === false) {
 				// Because the PHP bug #50224, the float numbers with no
 				// precision numbers are converted to integers when encoded
 				$value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
