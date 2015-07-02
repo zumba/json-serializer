@@ -13,6 +13,10 @@
         {
             "name": "Juan Basso",
             "email": "juan.basso@zumba.com"
+        },
+        {
+            "name": "Nil Portugués",
+            "email": "contact@nilportugues.com"
         }
     ],
     "require": {
@@ -22,10 +26,14 @@
         "phpunit/phpunit": "4.4.*"
     },
     "autoload": {
-        "psr-0": {
-            "Zumba\\Util": "src/",
-            "Zumba\\Exception": "src/",
-            "Zumba\\Util\\Test": "tests/"
+        "psr-4": {
+            "Zumba\\Util\\": "src/Util/",
+            "Zumba\\Exception\\": "src/Exception/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Zumba\\Util\\Test\\": "tests/"
         }
     }
 }

@@ -2,5 +2,6 @@
 
 namespace Zumba\Util\Test\SupportClasses;
 
-class EmptyClass {
+class EmptyClass
+{
 }
