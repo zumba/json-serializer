@@ -136,11 +136,10 @@ class JsonSerializer
      */
     protected function serializeData($value)
     {
-        if ($value instanceof \DatePeriod) {
-            throw new JsonSerializerException(
-                'DatePeriod is not supported in JsonSerializer. Loop through it and serialize the output.'
-            );
+        if (false === $this->isSupportedValue($value)) {
+            $this->throwExceptionForUnsupportedValue($value);
         }
+
 
         if (is_scalar($value) || $value === null) {
             if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string) $value, '.') === false) {
@@ -151,20 +150,45 @@ class JsonSerializer
 
             return $value;
         }
-        if (is_resource($value)) {
-            throw new JsonSerializerException('Resource is not supported in JsonSerializer');
-        }
+
         if (is_array($value)) {
             return array_map(array($this, __FUNCTION__), $value);
         }
 
 
+        return $this->serializeObject($value);
+    }
+
+    /**
+     * @param $value
+     *
+     * @return bool
+     */
+    private function isSupportedValue($value)
+    {
+        return !(($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)));
+    }
+
+    /**
+     * @param $value
+     *
+     * @throws \Zumba\Exception\JsonSerializerException
+     */
+    private function  throwExceptionForUnsupportedValue($value)
+    {
+        if ($value instanceof \DatePeriod) {
+            throw new JsonSerializerException(
+                'DatePeriod is not supported in JsonSerializer. Loop through it and serialize the output.'
+            );
+        }
+
+        if (is_resource($value)) {
+            throw new JsonSerializerException('Resource is not supported in JsonSerializer');
+        }
 
         if ($value instanceof \Closure) {
             throw new JsonSerializerException('Closures are not supported in JsonSerializer');
         }
-
-        return $this->serializeObject($value);
     }
 
     /**
@@ -184,7 +208,7 @@ class JsonSerializer
 
             return $this->serializeData($toArray);
         }
-        
+
         $ref = new ReflectionClass($value);
         if ($this->objectStorage->contains($value)) {
             return array(static::CLASS_IDENTIFIER_KEY => '@'.$this->objectStorage[$value]);
