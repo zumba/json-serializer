@@ -2,7 +2,7 @@
 
 ##### Forked
 [![Build Status](https://travis-ci.org/nilportugues/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
-[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?s=16511f820e0c53cdcbbbc62b5de07d493ded1181)](https://scrutinizer-ci.com/g/nilportugues/json-serializer/)
+[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/nilportugues/json-serializer/badges/quality-score.png?)](https://scrutinizer-ci.com/g/nilportugues/json-serializer/)
 
 ##### Original
 [![Build Status](https://travis-ci.org/zumba/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
