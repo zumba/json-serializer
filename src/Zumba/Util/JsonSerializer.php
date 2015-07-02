@@ -42,6 +42,18 @@ class JsonSerializer {
 	 */
 	protected $preserveZeroFractionSupport;
 
+
+	/**
+	* @var array
+	*/
+	private $dateTimeClassType = array(
+		'DateTime', 
+		'DateInterval', 
+		'DateTimeImmutable',
+		'DateTimeZone', 
+		'DatePeriod'
+	);
+
 	/**
 	 * Constructor.
 	 */
@@ -223,7 +235,12 @@ class JsonSerializer {
 			throw new JsonSerializerException('Unable to find class ' . $className);
 		}
 
-		if ($className === 'DateTime') {
+		$isDateTime = false;
+		foreach($this->dateTimeClassType as $class) {
+		    	$isDateTime = $isDateTime || is_subclass_of($className, $class, true) || $class === $className;
+		}
+
+		if ($isDateTime) {
 			$obj = $this->restoreUsingUnserialize($className, $value);
 			$this->objectMapping[$this->objectMappingIndex++] = $obj;
 			return $obj;
