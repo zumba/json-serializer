@@ -113,11 +113,13 @@ class JsonSerializer
      */
     protected function serializeData($value)
     {
-        if (!(($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
+        if ((($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
             $this->throwExceptionForUnsupportedValue($value);
         }
 
-        $func = $this->getSerializer($value);
+        $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
+        $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
+        $func = $this->serializationMap[$type];
 
         return $this->$func($value);
     }
@@ -142,19 +144,6 @@ class JsonSerializer
         if ($value instanceof \Closure) {
             throw new JsonSerializerException('Closures are not supported in JsonSerializer');
         }
-    }
-
-    /**
-     * @param mixed $value
-     *
-     * @return string
-     */
-    protected function getSerializer($value)
-    {
-        $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
-        $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
-
-        return $this->serializationMap[$type];
     }
 
     /**
