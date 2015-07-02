@@ -85,11 +85,8 @@ class JsonSerializer
      */
     public function serialize($value)
     {
-        if ((($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
-            $this->throwExceptionForUnsupportedValue($value);
-        }
-
         $this->reset();
+
         $encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
 
         return $this->processEncodedValue($encoded);
@@ -116,6 +113,8 @@ class JsonSerializer
      */
     protected function serializeData($value)
     {
+        $this->guardForUnsupportedValues($value);
+
         $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
         $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
         $func = $this->serializationMap[$type];
@@ -128,8 +127,12 @@ class JsonSerializer
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
-    protected function throwExceptionForUnsupportedValue($value)
+    protected function guardForUnsupportedValues($value)
     {
+        if ($value instanceof \Closure) {
+            throw new JsonSerializerException('Closures are not supported in JsonSerializer');
+        }
+
         if ($value instanceof \DatePeriod) {
             throw new JsonSerializerException(
                 'DatePeriod is not supported in JsonSerializer. Loop through it and serialize the output.'
@@ -140,9 +143,6 @@ class JsonSerializer
             throw new JsonSerializerException('Resource is not supported in JsonSerializer');
         }
 
-        if ($value instanceof \Closure) {
-            throw new JsonSerializerException('Closures are not supported in JsonSerializer');
-        }
     }
 
     /**
