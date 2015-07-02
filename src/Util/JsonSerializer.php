@@ -53,6 +53,15 @@ class JsonSerializer
         'DatePeriod',
     );
 
+    private $serializationMap = [
+        'object' => 'serializeObject',
+        'array' => 'serializeArray',
+        'integer' => 'serializeScalar',
+        'double' => 'serializeScalar',
+        'boolean' => 'serializeScalar',
+        'string' => 'serializeScalar',
+    ];
+
     /**
      * Constructor.
      */
@@ -82,7 +91,7 @@ class JsonSerializer
     /**
      * Reset variables.
      */
-    private function reset()
+    protected function reset()
     {
         $this->objectStorage = new SplObjectStorage();
         $this->objectMapping = array();
@@ -98,20 +107,21 @@ class JsonSerializer
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
-    private function serializeData($value)
+    protected function serializeData($value)
     {
         if (false === $this->isSupportedValue($value)) {
             $this->throwExceptionForUnsupportedValue($value);
         }
 
-        if (null === ($serialized = $this->serializeScalarOrNull($value))) {
-            if (is_array($value)) {
-                return array_map(array($this, __FUNCTION__), $value);
-            }
+        if ($value instanceof \DatePeriod) {
+            return $this->serializeDatePeriod($value);
         }
 
-        return (is_object($value) && $value instanceof \DatePeriod) ?
-            $this->serializeDatePeriod($value) : $this->serializeObject($value);
+        $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
+
+        $func = $this->serializationMap[$type];
+
+        return $this->$func($value);
     }
 
     /**
@@ -119,7 +129,7 @@ class JsonSerializer
      *
      * @return bool
      */
-    private function isSupportedValue($value)
+    protected function isSupportedValue($value)
     {
         return !(($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)));
     }
@@ -129,7 +139,7 @@ class JsonSerializer
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
-    private function throwExceptionForUnsupportedValue($value)
+    protected function throwExceptionForUnsupportedValue($value)
     {
         if ($value instanceof \DatePeriod) {
             throw new JsonSerializerException(
@@ -147,31 +157,11 @@ class JsonSerializer
     }
 
     /**
-     * @param mixed $value
-     *
-     * @return string
-     */
-    private function serializeScalarOrNull($value)
-    {
-        $serialized = null;
-
-        if (is_scalar($value) || $value === null) {
-            if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string) $value, '.') === false) {
-                // Because the PHP bug #50224, the float numbers with no
-                // precision numbers are converted to integers when encoded
-                $serialized = static::FLOAT_ADAPTER.'('.$value.'.0)';
-            }
-        }
-
-        return $serialized;
-    }
-
-    /**
      * @param \DatePeriod $value
      *
      * @return mixed
      */
-    private function serializeDatePeriod(\DatePeriod $value)
+    protected function serializeDatePeriod(\DatePeriod $value)
     {
         $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
         foreach ($value as $field) {
@@ -182,81 +172,11 @@ class JsonSerializer
     }
 
     /**
-     * Extract the data from an object.
-     *
-     * @param string $value
-     *
-     * @return array
-     */
-    private function serializeObject($value)
-    {
-        $ref = new ReflectionClass($value);
-        if ($this->objectStorage->contains($value)) {
-            return array(static::CLASS_IDENTIFIER_KEY => '@'.$this->objectStorage[$value]);
-        }
-
-        $this->objectStorage->attach($value, $this->objectMappingIndex++);
-        $paramsToSerialize = $this->getObjectProperties($ref, $value);
-
-        $data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
-        $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
-
-        return $data;
-    }
-
-    /**
-     * Return the list of properties to be serialized.
-     *
-     * @param ReflectionClass $ref
-     * @param object          $value
-     *
-     * @return array
-     */
-    private function getObjectProperties(ReflectionClass $ref, $value)
-    {
-        if (method_exists($value, '__sleep')) {
-            return $value->__sleep();
-        }
-
-        $props = array();
-        foreach ($ref->getProperties() as $prop) {
-            $props[] = $prop->getName();
-        }
-
-        return array_unique(array_merge($props, array_keys(get_object_vars($value))));
-    }
-
-    /**
-     * Extract the object data.
-     *
-     * @param object          $value
-     * @param ReflectionClass $ref
-     * @param array           $properties
-     *
-     * @return array
-     */
-    private function extractObjectData($value, $ref, $properties)
-    {
-        $data = array();
-        foreach ($properties as $property) {
-            try {
-                $propRef = $ref->getProperty($property);
-                $propRef->setAccessible(true);
-                $data[$property] = $propRef->getValue($value);
-            } catch (ReflectionException $e) {
-                $data[$property] = $value->$property;
-            }
-        }
-
-        return $data;
-    }
-
-    /**
      * Calculate encoding options.
      *
      * @return int
      */
-    private function calculateEncodeOptions()
+    protected function calculateEncodeOptions()
     {
         $options = JSON_UNESCAPED_UNICODE;
         if ($this->preserveZeroFractionSupport) {
@@ -273,7 +193,7 @@ class JsonSerializer
      *
      * @return string
      */
-    private function processEncodedValue($encoded)
+    protected function processEncodedValue($encoded)
     {
         if (!$this->preserveZeroFractionSupport) {
             $encoded = preg_replace('/"'.static::FLOAT_ADAPTER.'\((.*?)\)"/', '\1', $encoded);
@@ -303,7 +223,7 @@ class JsonSerializer
      *
      * @return mixed
      */
-    private function unserializeData($value)
+    protected function unserializeData($value)
     {
         if (is_scalar($value) || $value === null) {
             return $value;
@@ -322,7 +242,7 @@ class JsonSerializer
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
-    private function unserializeObject(array $value)
+    protected function unserializeObject(array $value)
     {
         $className = $value[static::CLASS_IDENTIFIER_KEY];
         unset($value[static::CLASS_IDENTIFIER_KEY]);
@@ -345,7 +265,7 @@ class JsonSerializer
      *
      * @return mixed
      */
-    private function unserializeDateTimeFamilyObject(array $value, $className)
+    protected function unserializeDateTimeFamilyObject(array $value, $className)
     {
         $obj = null;
 
@@ -362,7 +282,7 @@ class JsonSerializer
      *
      * @return bool
      */
-    private function isDateTimeFamiltyObject($className)
+    protected function isDateTimeFamiltyObject($className)
     {
         $isDateTime = false;
 
@@ -379,7 +299,7 @@ class JsonSerializer
      *
      * @return mixed
      */
-    private function restoreUsingUnserialize($className, array $attributes)
+    protected function restoreUsingUnserialize($className, array $attributes)
     {
         $obj = (object) $attributes;
         $serialized = preg_replace(
@@ -397,7 +317,7 @@ class JsonSerializer
      *
      * @return object
      */
-    private function unserializeUserDefinedObject(array $value, $className)
+    protected function unserializeUserDefinedObject(array $value, $className)
     {
         $ref = new ReflectionClass($className);
         $obj = $ref->newInstanceWithoutConstructor();
@@ -419,5 +339,101 @@ class JsonSerializer
         }
 
         return $obj;
+    }
+
+    /**
+     * @param $value
+     *
+     * @return string
+     */
+    protected function serializeScalar($value)
+    {
+        if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string) $value, '.') === false) {
+            // Because the PHP bug #50224, the float numbers with no
+            // precision numbers are converted to integers when encoded
+            $value = static::FLOAT_ADAPTER.'('.$value.'.0)';
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array $value
+     *
+     * @return array
+     */
+    protected function serializeArray(array $value)
+    {
+        return array_map(array($this, 'serializeData'), $value);
+    }
+
+    /**
+     * Extract the data from an object.
+     *
+     * @param string $value
+     *
+     * @return array
+     */
+    protected function serializeObject($value)
+    {
+        $ref = new ReflectionClass($value);
+        if ($this->objectStorage->contains($value)) {
+            return array(static::CLASS_IDENTIFIER_KEY => '@'.$this->objectStorage[$value]);
+        }
+
+        $this->objectStorage->attach($value, $this->objectMappingIndex++);
+        $paramsToSerialize = $this->getObjectProperties($ref, $value);
+
+        $data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
+        $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
+
+        return $data;
+    }
+
+    /**
+     * Return the list of properties to be serialized.
+     *
+     * @param ReflectionClass $ref
+     * @param object          $value
+     *
+     * @return array
+     */
+    protected function getObjectProperties(ReflectionClass $ref, $value)
+    {
+        if (method_exists($value, '__sleep')) {
+            return $value->__sleep();
+        }
+
+        $props = array();
+        foreach ($ref->getProperties() as $prop) {
+            $props[] = $prop->getName();
+        }
+
+        return array_unique(array_merge($props, array_keys(get_object_vars($value))));
+    }
+
+    /**
+     * Extract the object data.
+     *
+     * @param object          $value
+     * @param ReflectionClass $ref
+     * @param array           $properties
+     *
+     * @return array
+     */
+    protected function extractObjectData($value, $ref, $properties)
+    {
+        $data = array();
+        foreach ($properties as $property) {
+            try {
+                $propRef = $ref->getProperty($property);
+                $propRef->setAccessible(true);
+                $data[$property] = $propRef->getValue($value);
+            } catch (ReflectionException $e) {
+                $data[$property] = $value->$property;
+            }
+        }
+
+        return $data;
     }
 }
