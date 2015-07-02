@@ -113,23 +113,13 @@ class JsonSerializer
      */
     protected function serializeData($value)
     {
-        if (false === $this->isSupportedValue($value)) {
+        if (!(($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
             $this->throwExceptionForUnsupportedValue($value);
         }
 
         $func = $this->getSerializer($value);
 
         return $this->$func($value);
-    }
-
-    /**
-     * @param mixed $value
-     *
-     * @return bool
-     */
-    protected function isSupportedValue($value)
-    {
-        return !(($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)));
     }
 
     /**
@@ -265,7 +255,7 @@ class JsonSerializer
     {
         $obj = null;
 
-        if ($this->isDateTimeFamiltyObject($className)) {
+        if ($this->isDateTimeFamilyObject($className)) {
             $obj = $this->restoreUsingUnserialize($className, $value);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
         }
@@ -278,7 +268,7 @@ class JsonSerializer
      *
      * @return bool
      */
-    protected function isDateTimeFamiltyObject($className)
+    protected function isDateTimeFamilyObject($className)
     {
         $isDateTime = false;
 
