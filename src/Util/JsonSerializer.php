@@ -85,8 +85,11 @@ class JsonSerializer
      */
     public function serialize($value)
     {
-        $this->reset();
+        if ((($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
+            $this->throwExceptionForUnsupportedValue($value);
+        }
 
+        $this->reset();
         $encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
 
         return $this->processEncodedValue($encoded);
@@ -113,10 +116,6 @@ class JsonSerializer
      */
     protected function serializeData($value)
     {
-        if ((($value instanceof \DatePeriod) || ($value instanceof \Closure) || (is_resource($value)))) {
-            $this->throwExceptionForUnsupportedValue($value);
-        }
-
         $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
         $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
         $func = $this->serializationMap[$type];
