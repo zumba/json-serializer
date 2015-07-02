@@ -158,14 +158,7 @@ class JsonSerializer
             return array_map(array($this, __FUNCTION__), $value);
         }
 
-        if ($value instanceof \DatePeriod) {
-            $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
-            foreach ($value as $field) {
-                $toArray[] = $field;
-            }
 
-            return $this->serializeData($toArray);
-        }
 
         if ($value instanceof \Closure) {
             throw new JsonSerializerException('Closures are not supported in JsonSerializer');
@@ -183,21 +176,25 @@ class JsonSerializer
      */
     protected function serializeObject($value)
     {
-        $ref = new ReflectionClass($value);
+        if ($value instanceof \DatePeriod) {
+            $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
+            foreach ($value as $field) {
+                $toArray[] = $field;
+            }
 
+            return $this->serializeData($toArray);
+        }
+        
+        $ref = new ReflectionClass($value);
         if ($this->objectStorage->contains($value)) {
             return array(static::CLASS_IDENTIFIER_KEY => '@'.$this->objectStorage[$value]);
         }
 
         $this->objectStorage->attach($value, $this->objectMappingIndex++);
-
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
-        $data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
 
-        $data += array_map(
-            array($this, 'serializeData'),
-            $this->extractObjectData($value, $ref, $paramsToSerialize)
-        );
+        $data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
+        $data += array_map( array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
 
         return $data;
     }
@@ -263,8 +260,7 @@ class JsonSerializer
         }
 
         return isset($value[static::CLASS_IDENTIFIER_KEY]) ?
-            $this->unserializeObject($value) :
-            array_map(array($this, __FUNCTION__), $value);
+            $this->unserializeObject($value) : array_map(array($this, __FUNCTION__), $value);
     }
 
     /**
@@ -276,7 +272,7 @@ class JsonSerializer
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
-    protected function unserializeObject($value)
+    protected function unserializeObject(array $value)
     {
         $className = $value[static::CLASS_IDENTIFIER_KEY];
         unset($value[static::CLASS_IDENTIFIER_KEY]);
@@ -323,12 +319,12 @@ class JsonSerializer
     }
 
     /**
-     * @param $className
-     * @param $attributes
+     * @param string $className
+     * @param array $attributes
      *
      * @return mixed
      */
-    protected function restoreUsingUnserialize($className, $attributes)
+    protected function restoreUsingUnserialize($className, array $attributes)
     {
         $obj = (object) $attributes;
         $serialized = preg_replace(
