@@ -104,18 +104,10 @@ class JsonSerializer
             $this->throwExceptionForUnsupportedValue($value);
         }
 
-        if (is_scalar($value) || $value === null) {
-            if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string) $value, '.') === false) {
-                // Because the PHP bug #50224, the float numbers with no
-                // precision numbers are converted to integers when encoded
-                $value = static::FLOAT_ADAPTER.'('.$value.'.0)';
+        if (null === ($serialized = $this->serializeScalarOrNull($value))) {
+            if (is_array($value)) {
+                return array_map(array($this, __FUNCTION__), $value);
             }
-
-            return $value;
-        }
-
-        if (is_array($value)) {
-            return array_map(array($this, __FUNCTION__), $value);
         }
 
         return (is_object($value) && $value instanceof \DatePeriod) ?
@@ -152,6 +144,26 @@ class JsonSerializer
         if ($value instanceof \Closure) {
             throw new JsonSerializerException('Closures are not supported in JsonSerializer');
         }
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return string
+     */
+    private function serializeScalarOrNull($value)
+    {
+        $serialized = null;
+
+        if (is_scalar($value) || $value === null) {
+            if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string) $value, '.') === false) {
+                // Because the PHP bug #50224, the float numbers with no
+                // precision numbers are converted to integers when encoded
+                $serialized = static::FLOAT_ADAPTER.'('.$value.'.0)';
+            }
+        }
+
+        return $serialized;
     }
 
     /**
