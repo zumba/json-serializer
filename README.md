@@ -1,5 +1,10 @@
 # Json Serializer for PHP
 
+##### Forked
+[![Build Status](https://travis-ci.org/nilportugues/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
+[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?s=16511f820e0c53cdcbbbc62b5de07d493ded1181)](https://scrutinizer-ci.com/g/nilportugues/json-serializer/)
+
+##### Original
 [![Build Status](https://travis-ci.org/zumba/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
 [![Code Coverage](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/coverage.png?s=56e61922c00f25b9afae3e97af853f3eb68d9c1a)](https://scrutinizer-ci.com/g/zumba/json-serializer/)
 [![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?s=16511f820e0c53cdcbbbc62b5de07d493ded1181)](https://scrutinizer-ci.com/g/zumba/json-serializer/)
