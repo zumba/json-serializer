@@ -1,5 +1,10 @@
 # Json Serializer for PHP
 
+##### Forked
+[![Build Status](https://travis-ci.org/nilportugues/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
+[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?s=16511f820e0c53cdcbbbc62b5de07d493ded1181)](https://scrutinizer-ci.com/g/nilportugues/json-serializer/)
+
+##### Original
 [![Build Status](https://travis-ci.org/zumba/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
 [![Code Coverage](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/coverage.png?s=56e61922c00f25b9afae3e97af853f3eb68d9c1a)](https://scrutinizer-ci.com/g/zumba/json-serializer/)
 [![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?s=16511f820e0c53cdcbbbc62b5de07d493ded1181)](https://scrutinizer-ci.com/g/zumba/json-serializer/)
@@ -20,7 +25,8 @@ Unsupported serialization content:
 - Closures
 - Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
 	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
-
+- DatePeriod due to its built-in nature, but its results can be successfully serialized.
+ 
 This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
