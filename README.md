@@ -15,7 +15,7 @@ PHP content back.
 
 **Supported features**:
 - Encode/Decode of scalar, null, array
-- Encode/Decode of objects, including all the DateTime family objects (except `DatePeriod`).
+- Encode/Decode of objects, including all the [`DateTime family objects`](http://php.net/manual/es/book.datetime.php)  (except `DatePeriod`).
 - Support nested serialization
 - Support not declared properties on the original class definition (ie, properties in `stdClass`)
 - Support object recursion
