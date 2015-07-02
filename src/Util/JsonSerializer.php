@@ -53,6 +53,9 @@ class JsonSerializer
         'DatePeriod',
     );
 
+    /**
+     * @var array
+     */
     private $serializationMap = [
         'object' => 'serializeObject',
         'array' => 'serializeArray',
@@ -60,6 +63,7 @@ class JsonSerializer
         'double' => 'serializeScalar',
         'boolean' => 'serializeScalar',
         'string' => 'serializeScalar',
+        'DatePeriod' => 'serializeDatePeriod',
     ];
 
     /**
@@ -113,13 +117,7 @@ class JsonSerializer
             $this->throwExceptionForUnsupportedValue($value);
         }
 
-        if ($value instanceof \DatePeriod) {
-            return $this->serializeDatePeriod($value);
-        }
-
-        $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
-
-        $func = $this->serializationMap[$type];
+        $func = $this->getSerializer($value);
 
         return $this->$func($value);
     }
@@ -157,18 +155,16 @@ class JsonSerializer
     }
 
     /**
-     * @param \DatePeriod $value
+     * @param mixed $value
      *
-     * @return mixed
+     * @return string
      */
-    protected function serializeDatePeriod(\DatePeriod $value)
+    protected function getSerializer($value)
     {
-        $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
-        foreach ($value as $field) {
-            $toArray[] = $field;
-        }
+        $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
+        $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
 
-        return $this->serializeData($toArray);
+        return $this->serializationMap[$type];
     }
 
     /**
@@ -323,7 +319,24 @@ class JsonSerializer
         $obj = $ref->newInstanceWithoutConstructor();
 
         $this->objectMapping[$this->objectMappingIndex++] = $obj;
+        $this->setUnserializedObjectProperties($value, $ref, $obj);
 
+        if (method_exists($obj, '__wakeup')) {
+            $obj->__wakeup();
+        }
+
+        return $obj;
+    }
+
+    /**
+     * @param array           $value
+     * @param ReflectionClass $ref
+     * @param mixed           $obj
+     *
+     * @return mixed
+     */
+    protected function setUnserializedObjectProperties(array $value, ReflectionClass $ref, $obj)
+    {
         foreach ($value as $property => $propertyValue) {
             try {
                 $propRef = $ref->getProperty($property);
@@ -334,11 +347,22 @@ class JsonSerializer
             }
         }
 
-        if (method_exists($obj, '__wakeup')) {
-            $obj->__wakeup();
+        return $obj;
+    }
+
+    /**
+     * @param \DatePeriod $value
+     *
+     * @return mixed
+     */
+    protected function serializeDatePeriod(\DatePeriod $value)
+    {
+        $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
+        foreach ($value as $field) {
+            $toArray[] = $field;
         }
 
-        return $obj;
+        return $this->serializeData($toArray);
     }
 
     /**
