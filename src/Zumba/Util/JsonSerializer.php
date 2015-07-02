@@ -47,10 +47,10 @@ class JsonSerializer {
 	* @var array
 	*/
 	private $dateTimeClassType = array(
-		'DateTime', 
-		'DateInterval', 
-		'DateTimeImmutable',
-		'DateTimeZone', 
+		'DateTime',
+        'DateTimeImmutable',
+        'DateTimeZone',
+        'DateInterval',
 		'DatePeriod'
 	);
 
@@ -66,11 +66,13 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return string JSON encoded
-	 * @throws Zumba\Exception\JsonSerializerException
+	 * @throws \Zumba\Exception\JsonSerializerException
 	 */
 	public function serialize($value) {
 		$this->reset();
+
 		$encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
+
 		return $this->processEncodedValue($encoded);
 	}
 
@@ -116,9 +118,15 @@ class JsonSerializer {
 	 *
 	 * @param mixed $value
 	 * @return mixed
-	 * @throws Zumba\Exception\JsonSerializerException
+	 * @throws \Zumba\Exception\JsonSerializerException
 	 */
 	protected function serializeData($value) {
+        if ($value instanceof \DatePeriod) {
+            throw new JsonSerializerException(
+                'DatePeriod is not supported in JsonSerializer. Loop through it and serialize the output.'
+            );
+        }
+
 		if (is_scalar($value) || $value === null) {
 			if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string)$value, '.') === false) {
 				// Because the PHP bug #50224, the float numbers with no
@@ -130,9 +138,20 @@ class JsonSerializer {
 		if (is_resource($value)) {
 			throw new JsonSerializerException('Resource is not supported in JsonSerializer');
 		}
-		if (is_array($value)) {
+		if (is_array($value) ) {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
+
+        if ($value instanceof \DatePeriod) {
+
+            $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
+            foreach($value as $field) {
+                $toArray[] = $field;
+            }
+
+            return $this->serializeData($toArray);
+        }
+
 		if ($value instanceof \Closure) {
 			throw new JsonSerializerException('Closures are not supported in JsonSerializer');
 		}
@@ -146,16 +165,25 @@ class JsonSerializer {
 	 * @return array
 	 */
 	protected function serializeObject($value) {
-		$ref = new ReflectionClass($value);
+
+        $ref = new ReflectionClass($value);
 
 		if ($this->objectStorage->contains($value)) {
 			return array(static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]);
 		}
+
 		$this->objectStorage->attach($value, $this->objectMappingIndex++);
 
 		$paramsToSerialize = $this->getObjectProperties($ref, $value);
 		$data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
-		$data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
+
+
+		$data += array_map(
+            array($this, 'serializeData'),
+            $this->extractObjectData($value, $ref, $paramsToSerialize)
+        );
+
+
 		return $data;
 	}
 
@@ -187,6 +215,7 @@ class JsonSerializer {
 	 * @return array
 	 */
 	protected function extractObjectData($value, $ref, $properties) {
+
 		$data = array();
 		foreach ($properties as $property) {
 			try {
@@ -197,7 +226,8 @@ class JsonSerializer {
 				$data[$property] = $value->$property;
 			}
 		}
-		return $data;
+
+        return $data;
 	}
 
 	/**
@@ -218,9 +248,9 @@ class JsonSerializer {
 	/**
 	 * Convert the serialized array into an object
 	 *
-	 * @param aray $value
+	 * @param array $value
 	 * @return object
-	 * @throws Zumba\Exception\JsonSerializerException
+	 * @throws \Zumba\Exception\JsonSerializerException
 	 */
 	protected function unserializeObject($value) {
 		$className = $value[static::CLASS_IDENTIFIER_KEY];
@@ -265,8 +295,11 @@ class JsonSerializer {
 	}
 
 	protected function restoreUsingUnserialize($className, $attributes) {
-		$obj = (object)$attributes;
+
+       $obj = (object)$attributes;
 		$serialized = preg_replace('|^O:\d+:"\w+":|', 'O:' . strlen($className) . ':"' . $className . '":', serialize($obj));
+
+
 		return unserialize($serialized);
 	}
 

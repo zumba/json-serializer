@@ -223,7 +223,94 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$date = new \DateTime('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
 		$obj = $this->serializer->unserialize($this->serializer->serialize($date));
 		$this->assertSame($date->getTimestamp(), $obj->getTimestamp());
+		$this->assertEquals($date, $obj);
 	}
+
+    /**
+     * Test serialization of DateTimeImmutable classes
+     *
+     * Some interal classes, such as DateTimeImmutable, cannot be initialized with
+     * ReflectionClass::newInstanceWithoutConstructor()
+     *
+     * @return void
+     */
+    public function testSerializationOfDateTimeImmutable() {
+        $date = new \DateTimeImmutable('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
+        $obj = $this->serializer->unserialize($this->serializer->serialize($date));
+        $this->assertSame($date->getTimestamp(), $obj->getTimestamp());
+        $this->assertEquals($date, $obj);
+    }
+
+
+    /**
+     * Test serialization of DateTimeZone classes
+     *
+     * Some interal classes, such as DateTimeZone, cannot be initialized with
+     * ReflectionClass::newInstanceWithoutConstructor()
+     *
+     * @return void
+     */
+    public function testSerializationOfDateTimeZone() {
+        $date = new \DateTimeZone('UTC');
+        $obj = $this->serializer->unserialize($this->serializer->serialize($date));
+        $this->assertEquals($date, $obj);
+    }
+
+
+    /**
+     * Test serialization of DateInterval classes
+     *
+     * Some interal classes, such as DateInterval, cannot be initialized with
+     * ReflectionClass::newInstanceWithoutConstructor()
+     *
+     * @return void
+     */
+    public function testSerializationOfDateInterval() {
+        $date = new \DateInterval('P2Y4DT6H8M');
+        $obj = $this->serializer->unserialize($this->serializer->serialize($date));
+        $this->assertEquals($date, $obj);
+        $this->assertSame($date->d, $obj->d);
+    }
+
+
+    /**
+     * Test serialization of DatePeriod classes
+     *
+     * Some interal classes, such as DatePeriod, cannot be initialized with
+     * ReflectionClass::newInstanceWithoutConstructor()
+     *
+     * @return void
+     */
+    public function testSerializationOfDatePeriodException() {
+        $this->setExpectedException(
+            'Zumba\Exception\JsonSerializerException',
+            'DatePeriod is not supported in JsonSerializer. Loop through it and serialize the output.'
+        );
+
+        $period = new \DatePeriod(new \DateTime('2012-07-01'),  new \DateInterval('P7D'), 4);
+        $this->serializer->serialize($period);
+    }
+
+    /**
+     * Test serialization of DatePeriod output
+     *
+     * @return void
+     */
+    public function testSerializationOfDatePeriodOutputIsSerializable() {
+
+        $period = new \DatePeriod(new \DateTime('2012-07-01'),  new \DateInterval('P7D'), 4);
+        $dates = array();
+        foreach($period as $p) {
+            $dates[] = $p;
+        }
+        $objs = $this->serializer->unserialize($this->serializer->serialize($dates));
+
+        foreach($objs as $key => $obj) {
+            $this->assertSame($dates[$key]->getTimestamp(), $obj->getTimestamp());
+            $this->assertEquals($dates[$key], $obj);
+        }
+
+    }
 
 	/**
 	 * Test unserialize of unknown class
