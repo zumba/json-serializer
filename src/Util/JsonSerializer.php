@@ -118,11 +118,12 @@ class JsonSerializer
             return array_map(array($this, __FUNCTION__), $value);
         }
 
-        return ($value instanceof \DatePeriod) ? $this->serializeDatePeriod($value) : $this->serializeObject($value);
+        return (is_object($value) && $value instanceof \DatePeriod) ?
+            $this->serializeDatePeriod($value) : $this->serializeObject($value);
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      *
      * @return bool
      */
@@ -132,7 +133,7 @@ class JsonSerializer
     }
 
     /**
-     * @param $value
+     * @param mixed $value
      *
      * @throws \Zumba\Exception\JsonSerializerException
      */
@@ -154,11 +155,11 @@ class JsonSerializer
     }
 
     /**
-     * @param $value
+     * @param \DatePeriod $value
      *
      * @return mixed
      */
-    private function serializeDatePeriod($value)
+    private function serializeDatePeriod(\DatePeriod $value)
     {
         $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
         foreach ($value as $field) {
@@ -171,7 +172,7 @@ class JsonSerializer
     /**
      * Extract the data from an object.
      *
-     * @param object|string $value
+     * @param string $value
      *
      * @return array
      */
@@ -199,7 +200,7 @@ class JsonSerializer
      *
      * @return array
      */
-    private function getObjectProperties($ref, $value)
+    private function getObjectProperties(ReflectionClass $ref, $value)
     {
         if (method_exists($value, '__sleep')) {
             return $value->__sleep();
@@ -327,8 +328,8 @@ class JsonSerializer
     }
 
     /**
-     * @param array $value
-     * @param       $className
+     * @param array  $value
+     * @param string $className
      *
      * @return mixed
      */
@@ -345,7 +346,7 @@ class JsonSerializer
     }
 
     /**
-     * @param $className
+     * @param string $className
      *
      * @return bool
      */
