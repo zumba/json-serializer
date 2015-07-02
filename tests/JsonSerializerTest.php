@@ -233,6 +233,10 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testSerializationOfDateTimeImmutable()
     {
+        if (version_compare(PHP_VERSION, '5.5.0', '<')) {
+            $this->markTestSkipped('Supported for PHP 5.5.0 and above');
+        }
+
         $date = new \DateTimeImmutable('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
         $obj = $this->serializer->unserialize($this->serializer->serialize($date));
         $this->assertSame($date->getTimestamp(), $obj->getTimestamp());
