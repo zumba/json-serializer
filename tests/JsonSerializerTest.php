@@ -4,6 +4,8 @@ namespace Zumba\Util\Test;
 
 use Zumba\Util\JsonSerializer;
 use stdClass;
+use Zumba\Util\Test\SupportClasses\ArrayAccessClass;
+use Zumba\Util\Test\SupportClasses\TraversableClass;
 
 class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 {
@@ -29,7 +31,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * @dataProvider scalarData
      *
      * @param mixed  $scalar
-     * @param strign $jsoned
+     * @param string $jsoned
      */
     public function testSerializeScalar($scalar, $jsoned)
     {
@@ -42,7 +44,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * @dataProvider scalarData
      *
      * @param mixed  $scalar
-     * @param strign $jsoned
+     * @param string $jsoned
      */
     public function testUnserializeScalar($scalar, $jsoned)
     {
@@ -98,7 +100,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * @dataProvider arrayNoObjectData
      *
      * @param array  $array
-     * @param strign $jsoned
+     * @param string $jsoned
      */
     public function testSerializeArrayNoObject($array, $jsoned)
     {
@@ -111,7 +113,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * @dataProvider arrayNoObjectData
      *
      * @param array  $array
-     * @param strign $jsoned
+     * @param string $jsoned
      */
     public function testUnserializeArrayNoObject($array, $jsoned)
     {
@@ -209,6 +211,33 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $obj = $this->serializer->unserialize($serialized);
         $this->assertTrue($obj->woke);
+    }
+
+    /**
+     * Traversable serialization
+     */
+    public function testSerializationOfTraversableClasses()
+    {
+        $traversable = new TraversableClass();
+        $traversable->next();
+        $unserializedCollection = $this->serializer->unserialize($this->serializer->serialize($traversable));
+
+        $this->assertEquals($traversable, $unserializedCollection);
+    }
+
+    /**
+     * ArrayAccess serialization
+     */
+    public function testSerializationOfArrayAccessClasses()
+    {
+        $arrayAccess = new ArrayAccessClass();
+        $arrayAccess[] = 'Append 1';
+        $arrayAccess[] = 'Append 2';
+        $arrayAccess[] = 'Append 3';
+
+        $unserializedCollection = $this->serializer->unserialize($this->serializer->serialize($arrayAccess));
+
+        $this->assertEquals($arrayAccess, $unserializedCollection);
     }
 
     /**

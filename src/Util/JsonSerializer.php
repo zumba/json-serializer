@@ -63,8 +63,9 @@ class JsonSerializer
         'double' => 'serializeScalar',
         'boolean' => 'serializeScalar',
         'string' => 'serializeScalar',
-        'DatePeriod' => 'serializeDatePeriod',
+        'Traversable' => 'serializeArrayLikeObject'
     ];
+
 
     /**
      * Constructor.
@@ -116,7 +117,7 @@ class JsonSerializer
         $this->guardForUnsupportedValues($value);
 
         $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
-        $type = ($value instanceof \DatePeriod) ? 'DatePeriod' : $type;
+        $type = (class_implements('Traversable')) ? get_class($value) : $type;
         $func = $this->serializationMap[$type];
 
         return $this->$func($value);
@@ -329,13 +330,12 @@ class JsonSerializer
     }
 
     /**
-     * @param \DatePeriod $value
-     *
+     * @param \Traversable|\ArrayAccess $value
      * @return mixed
      */
-    protected function serializeDatePeriod(\DatePeriod $value)
+    protected function serializeArrayLikeObject($value)
     {
-        $toArray = array(static::CLASS_IDENTIFIER_KEY => 'DatePeriod');
+        $toArray = array(static::CLASS_IDENTIFIER_KEY => get_class($value));
         foreach ($value as $field) {
             $toArray[] = $field;
         }
