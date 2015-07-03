@@ -63,9 +63,17 @@ class JsonSerializer
         'double' => 'serializeScalar',
         'boolean' => 'serializeScalar',
         'string' => 'serializeScalar',
-        'Traversable' => 'serializeArrayLikeObject'
+        'Traversable' => 'serializeArrayLikeObject',
+        //Hack specific serialization classes
+        'DateTimeZone' => 'serializeDateTimeZone',
+        'DateTimeImmutable' => 'serializeDateTimeImmutable',
+        'DateInterval' => 'serializeDateInterval',
     ];
 
+    /**
+     * @var bool
+     */
+    private $isHHVM;
 
     /**
      * Constructor.
@@ -73,6 +81,7 @@ class JsonSerializer
     public function __construct()
     {
         $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
+        $this->isHHVM = defined('HHVM_VERSION');
     }
 
     /**
@@ -117,7 +126,11 @@ class JsonSerializer
         $this->guardForUnsupportedValues($value);
 
         $type = (gettype($value) && $value !== null) ? gettype($value) : 'string';
-        $type = (class_implements('Traversable')) ? get_class($value) : $type;
+        $type = (class_implements(
+                'Traversable'
+            ) || (($value instanceof \DateTimeZone || $value instanceof \DateInterval) && $this->isHHVM))
+            ? get_class($value) : $type;
+
         $func = $this->serializationMap[$type];
 
         return $this->$func($value);
@@ -143,7 +156,6 @@ class JsonSerializer
         if (is_resource($value)) {
             throw new JsonSerializerException('Resource is not supported in JsonSerializer');
         }
-
     }
 
     /**
@@ -245,6 +257,31 @@ class JsonSerializer
         $obj = null;
 
         if ($this->isDateTimeFamilyObject($className)) {
+            if ($className === 'DateTimeZone' && $this->isHHVM) {
+                $ref = new ReflectionClass($className);
+
+                return $ref->newInstanceArgs($value);
+            }
+
+            if ($className === 'DateTimeImmutable' && $this->isHHVM) {
+                $dateTimeZone = $this->unserializeDateTimeFamilyObject(array($value['data']['timezone']), 'DateTimeZone');
+                $ref = new ReflectionClass($className);
+
+                return $ref->newInstanceArgs(array($value['data']['date'], $dateTimeZone));
+            }
+
+            if ($className === 'DateInterval' && $this->isHHVM) {
+                $ref = new ReflectionClass($className);
+                $obj = $ref->newInstanceArgs([$value['construct']]);
+                unset($value['construct']);
+
+                foreach ($value as $k => $v) {
+                    $obj->$k = $v;
+                }
+
+                return $obj;
+            }
+
             $obj = $this->restoreUsingUnserialize($className, $value);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
         }
@@ -331,6 +368,7 @@ class JsonSerializer
 
     /**
      * @param \Traversable|\ArrayAccess $value
+     *
      * @return mixed
      */
     protected function serializeArrayLikeObject($value)
@@ -367,6 +405,46 @@ class JsonSerializer
     protected function serializeArray(array $value)
     {
         return array_map(array($this, 'serializeData'), $value);
+    }
+
+    /**
+     * @param \DateTimeZone $dateTimeZone
+     *
+     * @return mixed
+     */
+    protected function serializeDateTimeZone(\DateTimeZone $dateTimeZone)
+    {
+        $toArray = array(
+            static::CLASS_IDENTIFIER_KEY => get_class($dateTimeZone),
+            $dateTimeZone->getName(),
+        );
+
+        return $this->serializeData($toArray);
+    }
+
+    /**
+     * @param \DateInterval $dateInterval
+     *
+     * @return mixed
+     */
+    protected function serializeDateInterval(\DateInterval $dateInterval)
+    {
+        $toArray = array(
+            static::CLASS_IDENTIFIER_KEY => get_class($dateInterval),
+            'construct' => sprintf(
+                'P%sY%sM%sDT%sH%sM%sS',
+                $dateInterval->y,
+                $dateInterval->m,
+                $dateInterval->d,
+                $dateInterval->h,
+                $dateInterval->i,
+                $dateInterval->s
+            ),
+            'invert' => (empty($dateInterval->invert)) ? 0 : 1,
+            'days' => $dateInterval->days,
+        );
+
+        return $this->serializeData($toArray);
     }
 
     /**

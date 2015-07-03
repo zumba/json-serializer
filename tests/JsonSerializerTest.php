@@ -214,7 +214,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Traversable serialization
+     * Traversable serialization.
      */
     public function testSerializationOfTraversableClasses()
     {
@@ -226,7 +226,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * ArrayAccess serialization
+     * ArrayAccess serialization.
      */
     public function testSerializationOfArrayAccessClasses()
     {
@@ -268,6 +268,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $date = new \DateTimeImmutable('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
         $obj = $this->serializer->unserialize($this->serializer->serialize($date));
+
         $this->assertSame($date->getTimestamp(), $obj->getTimestamp());
         $this->assertEquals($date, $obj);
     }
@@ -281,6 +282,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function testSerializationOfDateTimeZone()
     {
         $date = new \DateTimeZone('UTC');
+
         $obj = $this->serializer->unserialize($this->serializer->serialize($date));
         $this->assertEquals($date, $obj);
     }

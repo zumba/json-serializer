@@ -12,11 +12,12 @@ class ArrayAccessClass implements \ArrayAccess
     /**
      *
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->container = array(
-            "one"   => 1,
-            "two"   => 2,
-            "three" => 3,
+            'one' => 1,
+            'two' => 2,
+            'three' => 3,
         );
     }
 
@@ -24,7 +25,8 @@ class ArrayAccessClass implements \ArrayAccess
      * @param mixed $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value)
+    {
         if (is_null($offset)) {
             $this->container[] = $value;
         } else {
@@ -34,24 +36,27 @@ class ArrayAccessClass implements \ArrayAccess
 
     /**
      * @param mixed $offset
+     *
      * @return bool
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset)
+    {
         return isset($this->container[$offset]);
     }
 
     /**
      * @param mixed $offset
      */
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset)
+    {
         unset($this->container[$offset]);
     }
 
     /**
      * @param mixed $offset
-     * @return null
      */
-    public function offsetGet($offset) {
+    public function offsetGet($offset)
+    {
         return isset($this->container[$offset]) ? $this->container[$offset] : null;
     }
 }

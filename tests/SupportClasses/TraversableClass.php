@@ -12,50 +12,56 @@ class TraversableClass implements \Iterator
      * @var array
      */
     private $array = array(
-        "firstelement",
-        "secondelement",
-        "lastelement",
+        'firstelement',
+        'secondelement',
+        'lastelement',
     );
 
     /**
      *
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->position = 0;
     }
 
     /**
      *
      */
-    public function rewind() {
+    public function rewind()
+    {
         $this->position = 0;
     }
 
     /**
      * @return mixed
      */
-    public function current() {
+    public function current()
+    {
         return $this->array[$this->position];
     }
 
     /**
      * @return int
      */
-    public function key() {
+    public function key()
+    {
         return $this->position;
     }
 
     /**
      *
      */
-    public function next() {
+    public function next()
+    {
         ++$this->position;
     }
 
     /**
      * @return bool
      */
-    public function valid() {
+    public function valid()
+    {
         return isset($this->array[$this->position]);
     }
 }
