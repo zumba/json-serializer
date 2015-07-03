@@ -4,5 +4,6 @@ namespace Zumba\Exception;
 
 use RuntimeException;
 
-class JsonSerializerException extends RuntimeException {
+class JsonSerializerException extends RuntimeException
+{
 }
