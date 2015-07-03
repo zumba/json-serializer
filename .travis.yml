@@ -3,8 +3,8 @@ php:
   - "5.4"
   - "5.5"
   - "5.6"
-  - "nightly"
-  - hhvm
+  - "7.0"
+  - "hhvm"
 
 before_script:
   - composer install --dev
@@ -13,4 +13,5 @@ script: ./vendor/bin/phpunit --coverage-text
 
 matrix:
      allow_failures:
-         - php: hhvm  
+         - php: "hhvm"  
+         - php: "7.0" 
