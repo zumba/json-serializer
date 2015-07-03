@@ -1,7 +1,7 @@
 # Json Serializer for PHP
 
 ##### Forked
-[![Build Status](https://travis-ci.org/nilportugues/json-serializer.png)](https://travis-ci.org/zumba/json-serializer)
+[![Build Status](https://travis-ci.org/nilportugues/json-serializer.png)](https://travis-ci.org/nilportugues/json-serializer)
 [![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/nilportugues/json-serializer/badges/quality-score.png?)](https://scrutinizer-ci.com/g/nilportugues/json-serializer/)
 
 ##### Original
