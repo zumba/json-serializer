@@ -48,14 +48,15 @@ $restoredInstance = $serializer->unserialize($json);
 If you are using composer, install the package [`zumba/json-serializer`](https://packagist.org/packages/zumba/json-serializer).
 
 ```
-$ composer require zumba/json-serializer
+$ composer require wrey75/json-serializer
 ```
 
-Or add the `zumba/json-serializer` directly in your `composer.json` file.
+Or add the `wrey75/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
 
-## Special Note for PHP 5.3
+## What's included?
 
-In order to support unescaped unicode characters, it is recommended to have the `mbstring` installed, otherwise unicode characters
-will be escaped in the format of `\uXXXX`.
+in addition to the original code, we have support for both MongoId and MongoDate 
+objects.
+
