@@ -18,13 +18,11 @@ Supported features:
 Unsupported serialization content:
 - Resource (ie, `fopen()` response)
 - Closures
-- Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
-	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
 
 This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 5.4*
+*Json Serializer requires PHP >= 5.3.6*
 
 ## Example
 
@@ -56,3 +54,8 @@ $ composer require zumba/json-serializer
 Or add the `zumba/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
+
+## Special Note for PHP 5.3
+
+In order to support unescaped unicode characters, it is recommended to have the `mbstring` installed, otherwise unicode characters
+will be escaped in the format of `\uXXXX`.

@@ -36,17 +36,17 @@ class JsonSerializer {
 	protected $objectMappingIndex = 0;
 
 	/**
-	 * Support PRESERVE_ZERO_FRACTION json option
+	 * Is this PHP 5.4 or above?
 	 *
 	 * @var boolean
 	 */
-	protected $preserveZeroFractionSupport;
+	protected $is54;
 
 	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
+		$this->is54 = version_compare(PHP_VERSION, '5.4.0') >= 0;
 	}
 
 	/**
@@ -58,34 +58,36 @@ class JsonSerializer {
 	 */
 	public function serialize($value) {
 		$this->reset();
-		$encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
-		return $this->processEncodedValue($encoded);
+		$encoded = json_encode($this->serializeData($value), $this->is54 ? JSON_UNESCAPED_UNICODE : 0);
+		if (!$this->is54) {
+			$this->convertUnicode($encoded);
+		}
+		return preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
 	}
 
 	/**
-	 * Calculate encoding options
+	 * Implements the JSON_UNESCAPED_UNICODE in 5.3.
 	 *
-	 * @return integer
+	 * @param string &$encoded JSON encoded data.
+	 * @return void
+	 * @todo Remove when 5.3 support is dropped.
 	 */
-	protected function calculateEncodeOptions() {
-		$options = JSON_UNESCAPED_UNICODE;
-		if ($this->preserveZeroFractionSupport) {
-			$options |= JSON_PRESERVE_ZERO_FRACTION;
+	protected function convertUnicode(&$encoded) {
+		if (!extension_loaded('mbstring')) {
+			return;
 		}
-		return $options;
-	}
-
-	/**
-	 * Execute post-encoding actions
-	 *
-	 * @param string $encoded
-	 * @return string
-	 */
-	protected function processEncodedValue($encoded) {
-		if (!$this->preserveZeroFractionSupport) {
-			$encoded = preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
-		}
-		return $encoded;
+		$encoded = preg_replace_callback(
+			'/\\\\u([0-9a-f]{4})/i',
+			function ($matches) {
+				$sym = mb_convert_encoding(
+					pack('H*', $matches[1]),
+						'UTF-8',
+						'UTF-16'
+					);
+				return $sym;
+			},
+			$encoded
+		);
 	}
 
 	/**
@@ -108,7 +110,7 @@ class JsonSerializer {
 	 */
 	protected function serializeData($value) {
 		if (is_scalar($value) || $value === null) {
-			if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string)$value, '.') === false) {
+			if (is_float($value) && strpos((string)$value, '.') === false) {
 				// Because the PHP bug #50224, the float numbers with no
 				// precision numbers are converted to integers when encoded
 				$value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
@@ -228,9 +230,21 @@ class JsonSerializer {
 			$this->objectMapping[$this->objectMappingIndex++] = $obj;
 			return $obj;
 		}
-
+		else if ($className === 'MongoDate') {
+			$obj = $this->restoreMongoDate($className, $value);
+			$this->objectMapping[$this->objectMappingIndex++] = $obj;
+			return $obj;
+		}
+		else if ($className === 'MongoId') {
+			$obj = $this->restoreMongoId($className, $value);
+			$this->objectMapping[$this->objectMappingIndex++] = $obj;
+			return $obj;
+		}
+		
 		$ref = new ReflectionClass($className);
-		$obj = $ref->newInstanceWithoutConstructor();
+		$obj = $this->is54 ?
+			$ref->newInstanceWithoutConstructor() :
+			unserialize('O:' . strlen($className) . ':"' . $className . '":0:{}');
 		$this->objectMapping[$this->objectMappingIndex++] = $obj;
 		foreach ($value as $property => $propertyValue) {
 			try {
@@ -252,7 +266,15 @@ class JsonSerializer {
 		$serialized = preg_replace('|^O:\d+:"\w+":|', 'O:' . strlen($className) . ':"' . $className . '":', serialize($obj));
 		return unserialize($serialized);
 	}
+	
+	protected function restoreMongoDate($className, $attributes) {
+		return new \MongoDate( $attributes['sec'], $attributes['usec']);
+	}
 
+	protected function restoreMongoId($className, $attributes) {
+		return new \MongoId( $attributes['$id'] );
+	}
+	
 	/**
 	 * Reset variables
 	 *
