@@ -228,6 +228,16 @@ class JsonSerializer {
 			$this->objectMapping[$this->objectMappingIndex++] = $obj;
 			return $obj;
 		}
+		else if ($className === 'MongoDate') {
+			$obj = $this->restoreMongoDate($className, $value);
+			$this->objectMapping[$this->objectMappingIndex++] = $obj;
+			return $obj;
+		}
+		else if ($className === 'MongoId') {
+			$obj = $this->restoreMongoId($className, $value);
+			$this->objectMapping[$this->objectMappingIndex++] = $obj;
+			return $obj;
+		}		
 
 		$ref = new ReflectionClass($className);
 		$obj = $ref->newInstanceWithoutConstructor();
@@ -262,6 +272,14 @@ class JsonSerializer {
 		$this->objectStorage = new SplObjectStorage();
 		$this->objectMapping = array();
 		$this->objectMappingIndex = 0;
+	}
+	
+	protected function restoreMongoDate($className, $attributes) {
+		return new \MongoDate( $attributes['sec'], $attributes['usec']);
+	}
+
+	protected function restoreMongoId($className, $attributes) {
+		return new \MongoId( $attributes['$id'] );
 	}
 
 }
