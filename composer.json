@@ -1,5 +1,5 @@
 {
-    "name": "zumba/json-serializer",
+    "name": "wrey75/json-serializer",
     "type": "library",
     "description": "Serialize PHP variables, including objects, in JSON format. Support to unserialize it too.",
     "keywords": ["json", "serialize", "serializer"],
