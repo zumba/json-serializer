@@ -18,11 +18,13 @@ Supported features:
 Unsupported serialization content:
 - Resource (ie, `fopen()` response)
 - Closures
+- Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
+	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
 
 This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 5.3.6*
+*Json Serializer requires PHP >= 5.4*
 
 ## Example
 
@@ -48,15 +50,9 @@ $restoredInstance = $serializer->unserialize($json);
 If you are using composer, install the package [`zumba/json-serializer`](https://packagist.org/packages/zumba/json-serializer).
 
 ```
-$ composer require wrey75/json-serializer
+$ composer require zumba/json-serializer
 ```
 
-Or add the `wrey75/json-serializer` directly in your `composer.json` file.
+Or add the `zumba/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
-
-## What's included?
-
-in addition to the original code, we have support for both MongoId and MongoDate 
-objects.
-
