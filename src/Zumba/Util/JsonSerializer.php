@@ -58,10 +58,7 @@ class JsonSerializer {
 	 */
 	public function __construct(ClosureSerializerInterface $closureSerializer = null) {
 		$this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
-
-		if ($closureSerializer !== null) {
-			$this->closureSerializer = $closureSerializer;
-		}
+		$this->closureSerializer = $closureSerializer;
 	}
 
 	/**
@@ -137,7 +134,7 @@ class JsonSerializer {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
 		if ($value instanceof \Closure) {
-			if ($this->closureSerializer === null) {
+			if (!$this->closureSerializer) {
 				throw new JsonSerializerException('Closure serializer not given. Unable to serialize closure.');
 			}
 			return array(
