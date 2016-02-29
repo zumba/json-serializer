@@ -60,9 +60,6 @@ class JsonSerializer {
 		$this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
 
 		if ($closureSerializer !== null) {
-			if (!$closureSerializer instanceof ClosureSerializerInterface) {
-				throw new JsonSerializerException('Invalid closure serializer given.');
-			}
 			$this->closureSerializer = $closureSerializer;
 		}
 	}
