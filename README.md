@@ -15,14 +15,16 @@ Supported features:
 - Support nested serialization
 - Support not declared properties on the original class definition (ie, properties in `stdClass`)
 - Support object recursion
-- Closures (via 3rd party plugin. See details below)
+- Closures (via 3rd party library. See details below)
 
 Unsupported serialization content:
 - Resource (ie, `fopen()` response)
+
+Limitations:
 - Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
 	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
 
-This project should not be confused with `JsonSerializable` interface from PHP 5.4. This interface is used on
+This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
 *Json Serializer requires PHP >= 5.4*
