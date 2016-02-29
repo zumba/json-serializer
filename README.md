@@ -15,10 +15,10 @@ Supported features:
 - Support nested serialization
 - Support not declared properties on the original class definition (ie, properties in `stdClass`)
 - Support object recursion
+- Closures (via 3rd party plugin. See details below)
 
 Unsupported serialization content:
 - Resource (ie, `fopen()` response)
-- Closures
 - Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
 	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
 
@@ -57,3 +57,35 @@ $ composer require zumba/json-serializer
 Or add the `zumba/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
+
+## Serializing Closures
+
+For serializing PHP closures you have to pass an object implementing `SuperClosure\SerializerInterface`.
+This interface is provided by the project [SuperClosure](https://github.com/jeremeamia/super_closure). This
+project also provides a closure serializer that implements this interface.
+
+Closure serialization has some limitations. Please check the SuperClosure project to check if it fits your
+needs.
+
+To use the SuperClosure with JsonSerializer, just pass the SuperClosure object as the first parameter
+on JsonSerializer constructor. Example:
+
+```php
+$toBeSerialized = array(
+	'data' => array(1, 2, 3),
+	'worker' => function ($data) {
+		$double = array();
+		foreach ($data as $i => $number) {
+			$double[$i] = $number * 2;
+		}
+		return $double;
+	}
+);
+
+$superClosure = new SuperClosure\Serializer();
+$jsonSerializer = new Zumba\Util\JsonSerializer($superClosure);
+$serialized = $jsonSerializer->serialize($toBeSerialized);
+```
+
+PS: JsonSerializer does not have a hard dependency of SuperClosure. If you want to use both projects
+make sure you add both on your composer requirements.

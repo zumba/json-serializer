@@ -4,6 +4,7 @@ namespace Zumba\Util\Test;
 
 use Zumba\Util\JsonSerializer;
 use stdClass;
+use SuperClosure\Serializer as ClosureSerializer;
 
 class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 
@@ -81,11 +82,11 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 	}
 
 	/**
-	 * Test the serialization of closures
+	 * Test the serialization of closures when not providing closure serializer
 	 *
 	 * @return void
 	 */
-	public function testSerializeClosure() {
+	public function testSerializeClosureWithoutSerializer() {
 		$this->setExpectedException('Zumba\Exception\JsonSerializerException');
 		$this->serializer->serialize(array('func' => function() {
 			echo 'whoops';
@@ -223,6 +224,55 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase {
 		$date = new \DateTime('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
 		$obj = $this->serializer->unserialize($this->serializer->serialize($date));
 		$this->assertSame($date->getTimestamp(), $obj->getTimestamp());
+	}
+
+	/**
+	 * Test the serialization of closures providing closure serializer
+	 *
+	 * @return void
+	 */
+	public function testSerializationOfClosure() {
+		if (!class_exists('SuperClosure\Serializer')) {
+			$this->markTestSkipped('SuperClosure is not installed.');
+		}
+
+		$closureSerializer = new ClosureSerializer();
+		$serializer = new JsonSerializer($closureSerializer);
+		$serialized = $serializer->serialize(array(
+			'func' => function() {
+				return 'it works';
+			},
+			'nice' => true
+		));
+
+		$unserialized = $serializer->unserialize($serialized);
+		$this->assertTrue(is_array($unserialized));
+		$this->assertTrue($unserialized['nice']);
+		$this->assertInstanceOf('Closure', $unserialized['func']);
+		$this->assertSame('it works', $unserialized['func']());
+	}
+
+	/**
+	 * Test the unserialization of closures without providing closure serializer
+	 *
+	 * @return void
+	 */
+	public function testUnserializeOfClosureWithoutSerializer() {
+		if (!class_exists('SuperClosure\Serializer')) {
+			$this->markTestSkipped('SuperClosure is not installed.');
+		}
+
+		$closureSerializer = new ClosureSerializer();
+		$serializer = new JsonSerializer($closureSerializer);
+		$serialized = $serializer->serialize(array(
+			'func' => function() {
+				return 'it works';
+			},
+			'nice' => true
+		));
+
+		$this->setExpectedException('Zumba\Exception\JsonSerializerException');
+		$this->serializer->unserialize($serialized);
 	}
 
 	/**
