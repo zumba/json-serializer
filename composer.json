@@ -25,10 +25,9 @@
         "phpunit/phpunit": "4.4.*"
     },
     "autoload": {
-        "psr-0": {
-            "Zumba\\Util": "src/",
-            "Zumba\\Exception": "src/",
-            "Zumba\\Util\\Test": "tests/"
+        "psr-4": {
+            "Zumba\\": "src/",
+            "Zumba\\Util\\Test\\": "tests/"
         }
     }
 }

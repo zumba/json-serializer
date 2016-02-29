@@ -11,12 +11,12 @@
 		 colors="true">
 	<testsuites>
 		<testsuite>
-			<directory>./tests/Zumba/Util</directory>
+			<directory>./tests</directory>
 		</testsuite>
 	</testsuites>
 	<filter>
 		<whitelist addUncoveredFilesFromWhitelist="true">
-			<directory>./src/Zumba</directory>
+			<directory>./src</directory>
 		</whitelist>
 	</filter>
 </phpunit>
