@@ -6,10 +6,12 @@ use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
 use Zumba\Exception\JsonSerializerException;
+use SuperClosure\SerializerInterface as ClosureSerializerInterface;
 
 class JsonSerializer {
 
 	const CLASS_IDENTIFIER_KEY = '@type';
+	const CLOSURE_IDENTIFIER_KEY = '@closure';
 	const FLOAT_ADAPTER = 'JsonSerializerFloatAdapter';
 
 	/**
@@ -43,10 +45,26 @@ class JsonSerializer {
 	protected $preserveZeroFractionSupport;
 
 	/**
-	 * Constructor.
+	 * Closure serializer instance
+	 *
+	 * @var SuperClosure\SerializerInterface
 	 */
-	public function __construct() {
+	protected $closureSerializer;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param SuperClosure\SerializerInterface $closureSerializer
+	 */
+	public function __construct(ClosureSerializerInterface $closureSerializer = null) {
 		$this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
+
+		if ($closureSerializer !== null) {
+			if (!$closureSerializer instanceof ClosureSerializerInterface) {
+				throw new JsonSerializerException('Invalid closure serializer given.');
+			}
+			$this->closureSerializer = $closureSerializer;
+		}
 	}
 
 	/**
@@ -122,7 +140,13 @@ class JsonSerializer {
 			return array_map(array($this, __FUNCTION__), $value);
 		}
 		if ($value instanceof \Closure) {
-			throw new JsonSerializerException('Closures are not supported in JsonSerializer');
+			if ($this->closureSerializer === null) {
+				throw new JsonSerializerException('Closure serializer not given. Unable to serialize closure.');
+			}
+			return array(
+				static::CLOSURE_IDENTIFIER_KEY => true,
+				'value' => $this->closureSerializer->serialize($value)
+			);
 		}
 		return $this->serializeObject($value);
 	}
@@ -198,9 +222,19 @@ class JsonSerializer {
 		if (is_scalar($value) || $value === null) {
 			return $value;
 		}
-		return isset($value[static::CLASS_IDENTIFIER_KEY]) ?
-			$this->unserializeObject($value) :
-			array_map(array($this, __FUNCTION__), $value);
+
+		if (isset($value[static::CLASS_IDENTIFIER_KEY])) {
+			return $this->unserializeObject($value);
+		}
+
+		if (!empty($value[static::CLOSURE_IDENTIFIER_KEY])) {
+			if (!$this->closureSerializer) {
+				throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
+			}
+			return $this->closureSerializer->unserialize($value['value']);
+		}
+
+		return array_map(array($this, __FUNCTION__), $value);
 	}
 
 	/**
