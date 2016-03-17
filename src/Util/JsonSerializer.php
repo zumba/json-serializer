@@ -127,7 +127,7 @@ class JsonSerializer
     protected function serializeData($value)
     {
         if (is_scalar($value) || $value === null) {
-            if (!$this->preserveZeroFractionSupport && is_float($value) && strpos((string)$value, '.') === false) {
+            if (!$this->preserveZeroFractionSupport && is_float($value) && ctype_digit((string)$value)) {
                 // Because the PHP bug #50224, the float numbers with no
                 // precision numbers are converted to integers when encoded
                 $value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
