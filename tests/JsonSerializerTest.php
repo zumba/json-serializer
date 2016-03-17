@@ -41,6 +41,25 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test serialization of float values with locale
+     *
+     * @return void
+     */
+    public function testSerializeFloatLocalized()
+    {
+        $possibleLocales = ['fr_FR', 'fr_FR.utf8', 'fr', 'fra', 'French'];
+        $originalLocale = setlocale(LC_NUMERIC, 0);
+        if (!setlocale(LC_NUMERIC, $possibleLocales)) {
+            $this->markTestSkipped('Unable to set an i18n locale.');
+        }
+
+        $data = [1.0, 1.1, 0.00000000001, 1.999999999999, 223423.123456789, 1e5, 1e11];
+        $expected = '[1.0,1.1,1.0e-11,1.999999999999,223423.12345679,100000.0,100000000000.0]';
+        $this->assertSame($expected, $this->serializer->serialize($data));
+
+        setlocale(LC_NUMERIC, $originalLocale);
+    }
+    /**
      * Test unserialization of scalar values
      *
      * @dataProvider scalarData
