@@ -1,11 +1,11 @@
 <?php
 
-namespace Zumba\Util;
+namespace Zumba\JsonSerializer;
 
 use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
-use Zumba\Exception\JsonSerializerException;
+use Zumba\JsonSerializer\Exception\JsonSerializerException;
 use SuperClosure\SerializerInterface as ClosureSerializerInterface;
 
 class JsonSerializer
@@ -68,7 +68,7 @@ class JsonSerializer
      *
      * @param mixed $value
      * @return string JSON encoded
-     * @throws Zumba\Exception\JsonSerializerException
+     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
      */
     public function serialize($value)
     {
@@ -126,7 +126,7 @@ class JsonSerializer
      *
      * @param mixed $value
      * @return mixed
-     * @throws Zumba\Exception\JsonSerializerException
+     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
      */
     protected function serializeData($value)
     {
@@ -251,7 +251,7 @@ class JsonSerializer
      *
      * @param aray $value
      * @return object
-     * @throws Zumba\Exception\JsonSerializerException
+     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
      */
     protected function unserializeObject($value)
     {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Zumba\Exception;
+namespace Zumba\JsonSerializer\Exception;
 
 use RuntimeException;
 

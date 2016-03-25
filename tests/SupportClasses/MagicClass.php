@@ -1,6 +1,6 @@
 <?php
 
-namespace Zumba\Util\Test\SupportClasses;
+namespace Zumba\JsonSerializer\Test\SupportClasses;
 
 class MagicClass
 {
