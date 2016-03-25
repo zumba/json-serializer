@@ -400,4 +400,19 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
         $this->serializer->unserialize('[this is not a valid json!}');
     }
+
+    /*
+     * Test namespace change (backward compatibility)
+     *
+     * @return void
+     * @deprecated
+     */
+    public function testNamespaceRename() {
+        $serializer = new \Zumba\Util\JsonSerializer();
+
+        $f = fopen(__FILE__, 'r');
+        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->serializer->serialize($f);
+    }
+
 }
