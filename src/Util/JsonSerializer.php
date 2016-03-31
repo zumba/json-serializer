@@ -114,7 +114,11 @@ class JsonSerializer
     public function unserialize($value)
     {
         $this->reset();
-        return $this->unserializeData(json_decode($value, true));
+        $data = json_decode($value, true);
+        if ($data === null && json_last_error() != JSON_ERROR_NONE) {
+            throw new JsonSerializerException('Invalid JSON to unserialize.');
+        }
+        return $this->unserializeData($data);
     }
 
     /**

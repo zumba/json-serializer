@@ -389,4 +389,15 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($obj->c2->c3, $obj->c2->c3->c3);
         $this->assertSame($obj->c2->c3_copy, $obj->c2->c3);
     }
+
+    /**
+     * Test unserialize with bad JSON
+     *
+     * @return void
+     */
+    public function testUnserializeBadJSON()
+    {
+        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->serializer->unserialize('[this is not a valid json!}');
+    }
 }
