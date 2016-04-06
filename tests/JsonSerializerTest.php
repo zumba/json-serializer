@@ -1,8 +1,8 @@
 <?php
 
-namespace Zumba\Util\Test;
+namespace Zumba\JsonSerializer\Test;
 
-use Zumba\Util\JsonSerializer;
+use Zumba\JsonSerializer\JsonSerializer;
 use stdClass;
 use SuperClosure\Serializer as ClosureSerializer;
 
@@ -12,7 +12,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     /**
      * Serializer instance
      *
-     * @var Zumba\Util\JsonSerializer
+     * @var Zumba\JsonSerializer\JsonSerializer
      */
     protected $serializer;
 
@@ -102,7 +102,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testSerializeResource()
     {
-        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $this->serializer->serialize(fopen(__FILE__, 'r'));
     }
 
@@ -113,7 +113,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testSerializeClosureWithoutSerializer()
     {
-        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $this->serializer->serialize(array('func' => function () {
             echo 'whoops';
         }));
@@ -175,22 +175,22 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('{"@type":"stdClass"}', $this->serializer->serialize($obj));
 
         $obj = $empty = new SupportClasses\EmptyClass();
-        $this->assertSame('{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}', $this->serializer->serialize($obj));
+        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}', $this->serializer->serialize($obj));
 
         $obj = new SupportClasses\AllVisibilities();
-        $expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"this is public","prot":"protected","priv":"dont tell anyone"}';
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"this is public","prot":"protected","priv":"dont tell anyone"}';
         $this->assertSame($expected, $this->serializer->serialize($obj));
 
         $obj->pub = 'new value';
-        $expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"new value","prot":"protected","priv":"dont tell anyone"}';
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"new value","prot":"protected","priv":"dont tell anyone"}';
         $this->assertSame($expected, $this->serializer->serialize($obj));
 
         $obj->pub = $empty;
-        $expected = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
         $this->assertSame($expected, $this->serializer->serialize($obj));
 
         $array = array('instance' => $empty);
-        $expected = '{"instance":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
+        $expected = '{"instance":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
         $this->assertSame($expected, $this->serializer->serialize($array));
 
         $obj = new stdClass();
@@ -211,21 +211,21 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('stdClass', $obj);
 
-        $serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}';
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}';
         $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $obj);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $obj);
 
-        $serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
         $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\Util\Test\SupportClasses\AllVisibilities', $obj);
-        $this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $obj->pub);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\AllVisibilities', $obj);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $obj->pub);
         $this->assertAttributeSame('protected', 'prot', $obj);
         $this->assertAttributeSame('dont tell anyone', 'priv', $obj);
 
-        $serialized = '{"instance":{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
+        $serialized = '{"instance":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
         $array = $this->serializer->unserialize($serialized);
         $this->assertTrue(is_array($array));
-        $this->assertInstanceOf('Zumba\Util\Test\SupportClasses\EmptyClass', $array['instance']);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $array['instance']);
     }
 
     /**
@@ -236,7 +236,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function testSerializationMagicMethods()
     {
         $obj = new SupportClasses\MagicClass();
-        $serialized = '{"@type":"Zumba\\\\Util\\\\Test\\\\SupportClasses\\\\MagicClass","show":true}';
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MagicClass","show":true}';
         $this->assertSame($serialized, $this->serializer->serialize($obj));
         $this->assertFalse($obj->woke);
 
@@ -306,7 +306,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
             'nice' => true
         ));
 
-        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $this->serializer->unserialize($serialized);
     }
 
@@ -317,7 +317,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testUnserializeUnknownClass()
     {
-        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $serialized = '{"@type":"UnknownClass"}';
         $this->serializer->unserialize($serialized);
     }
@@ -399,5 +399,20 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
         $this->serializer->unserialize('[this is not a valid json!}');
+    }
+
+    /*
+     * Test namespace change (backward compatibility)
+     *
+     * @return void
+     * @deprecated
+     */
+    public function testNamespaceRename()
+    {
+        $serializer = new \Zumba\Util\JsonSerializer();
+
+        $f = fopen(__FILE__, 'r');
+        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->serializer->serialize($f);
     }
 }
