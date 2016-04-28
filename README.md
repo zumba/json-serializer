@@ -1,7 +1,7 @@
 # Json Serializer for PHP
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.txt)
-[![Build Status](https://img.shields.io/travis/zumba/json-serializer/master.svg?style=flat-square)](https://travis-ci.org/cakephp/cakephp)
+[![Build Status](https://img.shields.io/travis/zumba/json-serializer/master.svg?style=flat-square)](https://travis-ci.org/zumba/json-serializer)
 [![Code Coverage](https://img.shields.io/coveralls/zumba/json-serializer/master.svg)](https://coveralls.io/github/zumba/json-serializer)
 [![Scrutinizer](https://scrutinizer-ci.com/g/zumba/json-serializer/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/zumba/json-serializer/)
 
