@@ -40,7 +40,7 @@ class MyCustomClass {
 
 $instance = new MyCustomClass();
 
-$serializer = new Zumba\JsonSerializer\JsonSerializer();
+$serializer = new \Zumba\Util\JsonSerializer();
 $json = $serializer->serialize($instance);
 // $json will contain the content {"@type":"MyCustomClass","isItAwesome":true,"nice":"very!"}
 
@@ -85,7 +85,7 @@ $toBeSerialized = array(
 );
 
 $superClosure = new SuperClosure\Serializer();
-$jsonSerializer = new Zumba\JsonSerializer\JsonSerializer($superClosure);
+$jsonSerializer = new \Zumba\Util\JsonSerializer($superClosure);
 $serialized = $jsonSerializer->serialize($toBeSerialized);
 ```
 
