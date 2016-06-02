@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Changed
+- Throwing exception if cannot encode JSON when serializing
 - Throwing exception if cannot decode JSON when unserializing
 ### Deprecated
 - Changed namespace from `Zumba\Util` to `Zumba\JsonSerializer`
