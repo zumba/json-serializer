@@ -48,14 +48,14 @@ class JsonSerializer
     /**
      * Closure serializer instance
      *
-     * @var SuperClosure\SerializerInterface
+     * @var ClosureSerializerInterface
      */
     protected $closureSerializer;
 
     /**
      * Constructor.
      *
-     * @param SuperClosure\SerializerInterface $closureSerializer
+     * @param ClosureSerializerInterface $closureSerializer
      */
     public function __construct(ClosureSerializerInterface $closureSerializer = null)
     {
@@ -68,12 +68,15 @@ class JsonSerializer
      *
      * @param mixed $value
      * @return string JSON encoded
-     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
+     * @throws JsonSerializerException
      */
     public function serialize($value)
     {
         $this->reset();
         $encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
+        if ($encoded === false || json_last_error() != JSON_ERROR_NONE) {
+            throw new JsonSerializerException('Invalid data to encode to JSON. Error: ' . json_last_error());
+        }
         return $this->processEncodedValue($encoded);
     }
 
@@ -126,7 +129,7 @@ class JsonSerializer
      *
      * @param mixed $value
      * @return mixed
-     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
+     * @throws JsonSerializerException
      */
     protected function serializeData($value)
     {
@@ -249,9 +252,9 @@ class JsonSerializer
     /**
      * Convert the serialized array into an object
      *
-     * @param aray $value
+     * @param array $value
      * @return object
-     * @throws Zumba\JsonSerializer\Exception\JsonSerializerException
+     * @throws JsonSerializerException
      */
     protected function unserializeObject($value)
     {

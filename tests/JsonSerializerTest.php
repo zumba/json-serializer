@@ -12,7 +12,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     /**
      * Serializer instance
      *
-     * @var Zumba\JsonSerializer\JsonSerializer
+     * @var JsonSerializer
      */
     protected $serializer;
 
@@ -32,7 +32,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider scalarData
      * @param mixed $scalar
-     * @param strign $jsoned
+     * @param string $jsoned
      * @return void
      */
     public function testSerializeScalar($scalar, $jsoned)
@@ -64,7 +64,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider scalarData
      * @param mixed $scalar
-     * @param strign $jsoned
+     * @param string $jsoned
      * @return void
      */
     public function testUnserializeScalar($scalar, $jsoned)
@@ -124,7 +124,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider arrayNoObjectData
      * @param array $array
-     * @param strign $jsoned
+     * @param string $jsoned
      * @return void
      */
     public function testSerializeArrayNoObject($array, $jsoned)
@@ -137,7 +137,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider arrayNoObjectData
      * @param array $array
-     * @param strign $jsoned
+     * @param string $jsoned
      * @return void
      */
     public function testUnserializeArrayNoObject($array, $jsoned)
@@ -399,6 +399,15 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     {
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
         $this->serializer->unserialize('[this is not a valid json!}');
+    }
+
+    /**
+     * The test attempts to serialize an array containing a non UTF8 encoded string
+     */
+    public function testSerializeBadData()
+    {
+        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $this->serializer->serialize(array(hex2bin('ba')));
     }
 
     /*
