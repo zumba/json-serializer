@@ -402,12 +402,81 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * The test attempts to serialize an array containing a non UTF8 encoded string
+     * The test attempts to serialize an array containing a NAN
      */
-    public function testSerializeBadData()
+    public function testSerializeInvalidData()
     {
+        if (PHP_VERSION_ID < 50500) {
+            $this->markTestSkipped('PHP 5.4 raises a warning when encoding NAN, which fails the test.');
+        }
+
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
-        $this->serializer->serialize(array(hex2bin('ba')));
+        $this->serializer->serialize(array(NAN));
+    }
+
+    /**
+     * @return void
+     */
+    public function testSerializeBinaryStringScalar()
+    {
+        $data = '';
+        for ($i = 0; $i <= 255; $i++) {
+            $data .= chr($i);
+        }
+
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($data));
+        $this->assertSame($data, $unserialized);
+    }
+
+    /**
+     * @return void
+     */
+    public function testSerializeArrayWithBinaryStringsAsValues()
+    {
+        $data = '';
+        for ($i = 0; $i <= 255; $i++) {
+            $data .= chr($i);
+        }
+
+        $data = [$data, "$data 1", "$data 2"];
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($data));
+        $this->assertSame($data, $unserialized);
+    }
+
+    /**
+     * Starting from 1 and not from 0 because php cannot handle the nil character (\u0000) in json keys as per:
+     * https://github.com/remicollet/pecl-json-c/issues/7
+     * https://github.com/json-c/json-c/issues/108
+     *
+     * @return void
+     */
+    public function testSerializeArrayWithBinaryStringsAsKeys()
+    {
+        $data = '';
+        for ($i = 1; $i <= 255; $i++) {
+            $data .= chr($i);
+        }
+
+        $data = [$data => $data, "$data 1" => 'something'];
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($data));
+        $this->assertSame($data, $unserialized);
+    }
+
+    /**
+     * @return void
+     */
+    public function testSerializeObjectWithBinaryStrings()
+    {
+        $data = '';
+        for ($i = 0; $i <= 255; $i++) {
+            $data .= chr($i);
+        }
+
+        $obj = new \stdClass();
+        $obj->string = $data;
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($obj));
+        $this->assertInstanceOf('stdClass', $obj);
+        $this->assertSame($obj->string, $unserialized->string);
     }
 
     /*

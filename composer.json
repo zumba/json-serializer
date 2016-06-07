@@ -16,7 +16,8 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.4.0",
+        "ext-mbstring": "*"
     },
     "suggest": {
         "jeremeamia/superclosure": "Allow to serialize PHP closures"
