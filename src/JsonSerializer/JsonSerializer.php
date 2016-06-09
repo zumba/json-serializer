@@ -13,7 +13,12 @@ class JsonSerializer
 
     const CLASS_IDENTIFIER_KEY = '@type';
     const CLOSURE_IDENTIFIER_KEY = '@closure';
+    const UTF8ENCODED_IDENTIFIER_KEY = '@utf8encoded';
+    const SCALAR_IDENTIFIER_KEY = '@scalar';
     const FLOAT_ADAPTER = 'JsonSerializerFloatAdapter';
+
+    const KEY_UTF8ENCODED = 1;
+    const VALUE_UTF8ENCODED = 2;
 
     /**
      * Storage for object
@@ -73,9 +78,19 @@ class JsonSerializer
     public function serialize($value)
     {
         $this->reset();
-        $encoded = json_encode($this->serializeData($value), $this->calculateEncodeOptions());
+        $serializedData = $this->serializeData($value);
+        $encoded = json_encode($serializedData, $this->calculateEncodeOptions());
         if ($encoded === false || json_last_error() != JSON_ERROR_NONE) {
-            throw new JsonSerializerException('Invalid data to encode to JSON. Error: ' . json_last_error());
+            if (json_last_error() != JSON_ERROR_UTF8) {
+                throw new JsonSerializerException('Invalid data to encode to JSON. Error: ' . json_last_error());
+            }
+
+            $serializedData = $this->encodeNonUtf8ToUtf8($serializedData);
+            $encoded = json_encode($serializedData, $this->calculateEncodeOptions());
+
+            if ($encoded === false || json_last_error() != JSON_ERROR_NONE) {
+                throw new JsonSerializerException('Invalid data to encode to JSON. Error: ' . json_last_error());
+            }
         }
         return $this->processEncodedValue($encoded);
     }
@@ -92,6 +107,53 @@ class JsonSerializer
             $options |= JSON_PRESERVE_ZERO_FRACTION;
         }
         return $options;
+    }
+
+    /**
+     * @param mixed $serializedData
+     *
+     * @return array
+     */
+    protected function encodeNonUtf8ToUtf8($serializedData)
+    {
+        if (is_string($serializedData)) {
+            if (!mb_check_encoding($serializedData, 'UTF-8')) {
+                $serializedData = [
+                    static::SCALAR_IDENTIFIER_KEY => mb_convert_encoding($serializedData, 'UTF-8', '8bit'),
+                    static::UTF8ENCODED_IDENTIFIER_KEY => static::VALUE_UTF8ENCODED,
+                ];
+            }
+
+            return $serializedData;
+        }
+
+        $encodedKeys = [];
+        $encodedData = [];
+        foreach ($serializedData as $key => $value) {
+            if (is_array($value)) {
+                $value = $this->encodeNonUtf8ToUtf8($value);
+            }
+
+            if (!mb_check_encoding($key, 'UTF-8')) {
+                $key = mb_convert_encoding($key, 'UTF-8', '8bit');
+                $encodedKeys[$key] = (isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0) | static::KEY_UTF8ENCODED;
+            }
+
+            if (is_string($value)) {
+                if (!mb_check_encoding($value, 'UTF-8')) {
+                    $value = mb_convert_encoding($value, 'UTF-8', '8bit');
+                    $encodedKeys[$key] = (isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0) | static::VALUE_UTF8ENCODED;
+                }
+            }
+
+            $encodedData[$key] = $value;
+        }
+
+        if ($encodedKeys) {
+            $encodedData[self::UTF8ENCODED_IDENTIFIER_KEY] = $encodedKeys;
+        }
+
+        return $encodedData;
     }
 
     /**
@@ -121,6 +183,11 @@ class JsonSerializer
         if ($data === null && json_last_error() != JSON_ERROR_NONE) {
             throw new JsonSerializerException('Invalid JSON to unserialize.');
         }
+
+        if (mb_strpos($value, static::UTF8ENCODED_IDENTIFIER_KEY) !== false) {
+            $data = $this->decodeNonUtf8FromUtf8($data);
+        }
+
         return $this->unserializeData($data);
     }
 
@@ -247,6 +314,48 @@ class JsonSerializer
         }
 
         return array_map(array($this, __FUNCTION__), $value);
+    }
+
+    /**
+     * @param mixed $serializedData
+     *
+     * @return mixed
+     */
+    protected function decodeNonUtf8FromUtf8($serializedData)
+    {
+        if (is_array($serializedData) && isset($serializedData[static::SCALAR_IDENTIFIER_KEY])) {
+            $serializedData = mb_convert_encoding($serializedData[static::SCALAR_IDENTIFIER_KEY], '8bit', 'UTF-8');
+            return $serializedData;
+        } elseif (is_scalar($serializedData) || $serializedData === null) {
+            return $serializedData;
+        }
+
+        $encodedKeys = [];
+        if (isset($serializedData[static::UTF8ENCODED_IDENTIFIER_KEY])) {
+            $encodedKeys = $serializedData[static::UTF8ENCODED_IDENTIFIER_KEY];
+            unset($serializedData[static::UTF8ENCODED_IDENTIFIER_KEY]);
+        }
+
+        $decodedData = [];
+        foreach ($serializedData as $key => $value) {
+            if (is_array($value)) {
+                $value = $this->decodeNonUtf8FromUtf8($value);
+            }
+
+            if (isset($encodedKeys[$key])) {
+                $originalKey = $key;
+                if ($encodedKeys[$key] & static::KEY_UTF8ENCODED) {
+                    $key = mb_convert_encoding($key, '8bit', 'UTF-8');
+                }
+                if ($encodedKeys[$originalKey] & static::VALUE_UTF8ENCODED) {
+                    $value = mb_convert_encoding($value, '8bit', 'UTF-8');
+                }
+            }
+
+            $decodedData[$key] = $value;
+        }
+
+        return $decodedData;
     }
 
     /**

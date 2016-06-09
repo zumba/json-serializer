@@ -10,19 +10,25 @@ but the output is a string JSON encoded. You can also unserialize the JSON gener
 PHP content back.
 
 Supported features:
+
 - Encode/Decode of scalar, null, array
 - Encode/Decode of objects
+- Encode/Decode of binary data
 - Support nested serialization
 - Support not declared properties on the original class definition (ie, properties in `stdClass`)
 - Support object recursion
 - Closures (via 3rd party library. See details below)
 
 Unsupported serialization content:
+
 - Resource (ie, `fopen()` response)
+- NAN, INF constants
 
 Limitations:
-- Binary String or malformed UTF8 strings (ie, resulsts from `SELECT AES_ENCRYPT(:content, :key) as encrypted`)
-	- These strings will need to be properly handled by converting to hex using `bin2hex` or `utf8_encode` in the `__sleep()` method
+
+- Binary data containing null bytes (\u0000) as array keys cannot be properly decoded because of a json extension bug:
+    - https://github.com/remicollet/pecl-json-c/issues/7
+    - https://github.com/json-c/json-c/issues/108
 
 This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
@@ -59,6 +65,30 @@ $ composer require zumba/json-serializer
 Or add the `zumba/json-serializer` directly in your `composer.json` file.
 
 If you are not using composer, you can just copy the files from `src` folder in your project.
+
+## Serializing Binary Strings
+
+Binary strings introduce two special identifiers in the final json: `@utf8encoded` and `@scalar`.
+`@utf8encoded` is an array of keys from the original data which have their value (or the keys themselves) 
+encoded from 8bit to UTF-8. This is how the serializer knows what to encode back from UTF-8 to 8bit when deserializing. 
+Example:
+
+```php
+$data = ['key' => '<binaryvalue>', 'anotherkey' => 'nonbinaryvalue'];
+$serializer = new Zumba\JsonSerializer\JsonSerializer();
+$json = $serializer->serialize($data);
+// $json will contain the content {"key":"<utf8encodedbinaryvalue>","anotherkey":"nonbinaryvalue","@utf8encoded":{"key":1}}
+```
+
+`@scalar` is used only when the value to be encoded is not an array or an object but a binary string. Example:
+
+```php
+$data = '<binaryvalue>';
+$serializer = new Zumba\JsonSerializer\JsonSerializer();
+$json = $serializer->serialize($data);
+// $json will contain the content {"@scalar":"<utf8encodedbinaryvalue>","@utf8encoded":1}
+```
+
 
 ## Serializing Closures
 
