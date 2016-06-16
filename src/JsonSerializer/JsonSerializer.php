@@ -58,14 +58,23 @@ class JsonSerializer
     protected $closureSerializer;
 
     /**
+     * Map of custom object serializers
+     *
+     * @var array
+     */
+    protected $customObjectSerializerMap;
+
+    /**
      * Constructor.
      *
      * @param ClosureSerializerInterface $closureSerializer
+     * @param array $customObjectSerializerMap
      */
-    public function __construct(ClosureSerializerInterface $closureSerializer = null)
+    public function __construct(ClosureSerializerInterface $closureSerializer = null, $customObjectSerializerMap = array())
     {
         $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
         $this->closureSerializer = $closureSerializer;
+        $this->customObjectSerializerMap = (array)$customObjectSerializerMap;
     }
 
     /**
@@ -234,15 +243,21 @@ class JsonSerializer
      */
     protected function serializeObject($value)
     {
-        $ref = new ReflectionClass($value);
-
         if ($this->objectStorage->contains($value)) {
             return array(static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]);
         }
         $this->objectStorage->attach($value, $this->objectMappingIndex++);
 
+        $ref = new ReflectionClass($value);
+        $className = $ref->getName();
+        if (array_key_exists($className, $this->customObjectSerializerMap)) {
+            $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+            $data += $this->customObjectSerializerMap[$className]->serialize($value);
+            return $data;
+        }
+
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
-        $data = array(static::CLASS_IDENTIFIER_KEY => $ref->getName());
+        $data = array(static::CLASS_IDENTIFIER_KEY => $className);
         $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
         return $data;
     }
@@ -373,6 +388,12 @@ class JsonSerializer
         if ($className[0] === '@') {
             $index = substr($className, 1);
             return $this->objectMapping[$index];
+        }
+
+        if (array_key_exists($className, $this->customObjectSerializerMap)) {
+            $obj = $this->customObjectSerializerMap[$className]->unserialize($value);
+            $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            return $obj;
         }
 
         if (!class_exists($className)) {

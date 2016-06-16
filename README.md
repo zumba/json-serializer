@@ -121,3 +121,43 @@ $serialized = $jsonSerializer->serialize($toBeSerialized);
 
 PS: JsonSerializer does not have a hard dependency of SuperClosure. If you want to use both projects
 make sure you add both on your composer requirements.
+
+## Custom Serializers
+
+Some classes may not be suited to be serialized and unserialized using the default reflection methods.
+
+Custom serializers provide the ability to define ```serialize``` and ```unserialize``` methods for specific classes.
+
+```php
+class MyType {
+    public $field1;
+    public $field2;
+}
+
+class MyTypeSerializer {
+    public function serialize(MyType $obj) {
+        return array('fields' => $obj->field1 . ' ' . $obj->field2);
+    }
+
+    public function unserialize($values) {
+        list($field1, $field2) = explode(' ', $values['fields']);
+        $obj = new MyType();
+        $obj->field1 = $field1;
+        $obj->field2 = $field2;
+        return $obj;
+    }
+}
+
+// map of "class name" => Custom serializer
+$customObjectSerializers['MyType'] = new MyTypeSerializer();
+$jsonSerializer = new Zumba\JsonSerializer\JsonSerializer(null, $customObjectSerializers);
+
+$toBeSerialized = new MyType();
+$toBeSerialized->field1 = 'x';
+$toBeSerialized->field2 = 'y';
+$json = $jsonSerializer->serialize($toBeSerialized);
+// $json == {"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}
+
+$myType = $jsonSerializer->unserialize($json);
+// $myType == $toBeSerialized
+```

@@ -24,7 +24,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         parent::setUp();
-        $this->serializer = new JsonSerializer();
+        $customObjectSerializerMap['Zumba\\JsonSerializer\\Test\\SupportClasses\\MyType'] = new \Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer();
+        $this->serializer = new JsonSerializer(null, $customObjectSerializerMap);
     }
 
     /**
@@ -226,6 +227,34 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $array = $this->serializer->unserialize($serialized);
         $this->assertTrue(is_array($array));
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $array['instance']);
+    }
+
+
+    /**
+     * Test serialization of objects using the custom serializers
+     *
+     * @return void
+     */
+    public function testCustomObjectSerializer()
+    {
+        $obj = new SupportClasses\MyType();
+        $obj->field1 = 'x';
+        $obj->field2 = 'y';
+        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}', $this->serializer->serialize($obj));
+    }
+
+    /**
+     * Test unserialization of objects using the custom serializers
+     *
+     * @return void
+     */
+    public function testCustomObjectsUnserializer()
+    {
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\MyType', $obj);
+        $this->assertAttributeSame('x', 'field1', $obj);
+        $this->assertAttributeSame('y', 'field2', $obj);
     }
 
     /**
