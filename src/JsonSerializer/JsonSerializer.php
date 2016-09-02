@@ -258,6 +258,11 @@ class JsonSerializer
 
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
         $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+
+        if($value instanceof \SplDoublyLinkedList){
+            return $data + array('value' => $value->serialize());
+        }
+
         $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
         return $data;
     }
@@ -408,6 +413,13 @@ class JsonSerializer
 
         $ref = new ReflectionClass($className);
         $obj = $ref->newInstanceWithoutConstructor();
+
+        if($obj instanceof \SplDoublyLinkedList ){
+            $obj->unserialize($value['value']);
+            $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            return $obj;
+        }
+
         $this->objectMapping[$this->objectMappingIndex++] = $obj;
         foreach ($value as $property => $propertyValue) {
             try {
