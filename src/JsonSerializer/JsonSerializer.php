@@ -258,6 +258,11 @@ class JsonSerializer
 
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
         $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+
+        if($value instanceof \SplDoublyLinkedList){
+            return $data + array('value' => $value->serialize());
+        }
+
         $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
         return $data;
     }
@@ -406,8 +411,19 @@ class JsonSerializer
             return $obj;
         }
 
-        $ref = new ReflectionClass($className);
-        $obj = $ref->newInstanceWithoutConstructor();
+        if (!$this->isSplList($className)) {
+            $ref = new ReflectionClass($className);
+            $obj = $ref->newInstanceWithoutConstructor();
+        } else {
+            $obj = new $className();
+        }
+
+        if ($obj instanceof \SplDoublyLinkedList ) {
+            $obj->unserialize($value['value']);
+            $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            return $obj;
+        }
+
         $this->objectMapping[$this->objectMappingIndex++] = $obj;
         foreach ($value as $property => $propertyValue) {
             try {
@@ -422,6 +438,14 @@ class JsonSerializer
             $obj->__wakeup();
         }
         return $obj;
+    }
+
+    /**
+     * @return boolean
+     */
+    protected function isSplList($className)
+    {
+        return in_array($className, array('SplQueue', 'SplDoublyLinkedList', 'SplStack'));
     }
 
     protected function restoreUsingUnserialize($className, $attributes)

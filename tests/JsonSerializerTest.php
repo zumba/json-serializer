@@ -522,4 +522,18 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
         $this->serializer->serialize($f);
     }
+
+    /**
+     * Test serialization of SplDoubleLinkedList
+     *
+     * @return void
+     */
+    public function testSerializationOfSplDoublyLinkedList()
+    {
+        $list = new \SplDoublyLinkedList();
+        $list->push('fizz');
+        $list->push(42);
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
+        $this->assertTrue($list->serialize() === $unserialized->serialize());
+    }
 }
