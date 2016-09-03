@@ -411,10 +411,14 @@ class JsonSerializer
             return $obj;
         }
 
-        $ref = new ReflectionClass($className);
-        $obj = $ref->newInstanceWithoutConstructor();
+        if (!$this->isSplList($className)) {
+            $ref = new ReflectionClass($className);
+            $obj = $ref->newInstanceWithoutConstructor();
+        } else {
+            $obj = new $className();
+        }
 
-        if($obj instanceof \SplDoublyLinkedList ){
+        if ($obj instanceof \SplDoublyLinkedList ) {
             $obj->unserialize($value['value']);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
             return $obj;
@@ -434,6 +438,14 @@ class JsonSerializer
             $obj->__wakeup();
         }
         return $obj;
+    }
+
+    /**
+     * @return boolean
+     */
+    protected function isSplList($className)
+    {
+        return in_array($className, array('SplQueue', 'SplDoublyLinkedList', 'SplStack'));
     }
 
     protected function restoreUsingUnserialize($className, $attributes)
