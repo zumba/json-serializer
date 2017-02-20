@@ -5,6 +5,9 @@
     "keywords": ["json", "serialize", "serializer"],
     "homepage": "http://tech.zumba.com",
     "license": "MIT",
+    "scripts": {
+        "test": "phpunit --colors=always"
+    },
     "authors": [
         {
             "name": "Zumba Fitness, LLC",
