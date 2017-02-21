@@ -5,6 +5,7 @@ namespace Zumba\JsonSerializer;
 use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
+use SuperClosure\SerializerInterface as ClosureSerializerInterface;
 use Zumba\Contracts\EntitySerializer;
 use Zumba\JsonSerializer\EntitySerializers\ClosureEntitySerializer;
 use Zumba\JsonSerializer\EntitySerializers\DateTimeEntitySerializer;
@@ -370,7 +371,7 @@ class JsonSerializer
             return $value;
         } elseif (isset($value[static::CLASS_IDENTIFIER_KEY])) {
             return $this->unserializeObject($value);
-        } elseif (!empty($value[static::CLOSURE_IDENTIFIER_KEY])) {
+        } elseif (!empty($value[self::CLOSURE_IDENTIFIER_KEY])) {
             return $this->unserializeClosure($value);
         }
 

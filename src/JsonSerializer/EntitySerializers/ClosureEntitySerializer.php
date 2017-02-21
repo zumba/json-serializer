@@ -4,6 +4,7 @@ namespace Zumba\JsonSerializer\EntitySerializers;
 
 use SuperClosure\SerializerInterface as ClosureSerializerInterface;
 use Zumba\Contracts\EntitySerializer;
+use Zumba\JsonSerializer\JsonSerializer;
 
 class ClosureEntitySerializer implements EntitySerializer
 {
@@ -36,8 +37,8 @@ class ClosureEntitySerializer implements EntitySerializer
     public function serialize($object)
     {
         return [
-            self::CLOSURE_IDENTIFIER_KEY => true,
-            'value'                      => $this->closureSerializer->serialize($object)
+            JsonSerializer::CLOSURE_IDENTIFIER_KEY => true,
+            'value'                                => $this->closureSerializer->serialize($object)
         ];
     }
 
