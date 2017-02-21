@@ -20,7 +20,7 @@ class MyTypeSerializer implements EntitySerializer
      */
     public function serialize($obj)
     {
-        return ['fields' => $obj->field1 . ' ' . $obj->field2];
+        return ['field1' => $obj->field1 , 'field2' => $obj->field2];
     }
 
     /**
@@ -29,10 +29,9 @@ class MyTypeSerializer implements EntitySerializer
      */
     public function unserialize($values)
     {
-        list($field1, $field2) = explode(' ', $values['fields']);
         $obj = new MyType();
-        $obj->field1 = $field1;
-        $obj->field2 = $field2;
+        $obj->field1 = $values['field1'];
+        $obj->field2 = $values['field2'];
         return $obj;
     }
 }

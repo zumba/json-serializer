@@ -27,7 +27,7 @@ class ClosureEntitySerializer implements EntitySerializer
      */
     public function getType()
     {
-        return \Closure::class;
+        return 'Closure';
     }
 
     /**

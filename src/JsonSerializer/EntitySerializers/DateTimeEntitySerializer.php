@@ -13,7 +13,7 @@ class DateTimeEntitySerializer implements EntitySerializer
      */
     public function getType()
     {
-        return \DateTime::class;
+        return 'DateTime';
     }
 
     /**

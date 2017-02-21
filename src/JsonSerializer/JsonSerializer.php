@@ -87,6 +87,15 @@ class JsonSerializer
     }
 
     /**
+     * @param $className
+     * @return bool
+     */
+    public function hasEntitySerializer($className)
+    {
+        return array_key_exists($className, $this->customObjectSerializerMap);
+    }
+
+    /**
      * @param $entity
      * @return EntitySerializer|null
      */
@@ -96,7 +105,7 @@ class JsonSerializer
             return $serialiser;
         }
 
-        if (($serialiser = $this->resolveEntitySerializerByDirectClassName($entity)) != null) {
+        if (($serialiser = $this->resolveEntitySerializerByInheritance($entity)) != null) {
             return $serialiser;
         }
     }
@@ -477,10 +486,11 @@ class JsonSerializer
      */
     protected function serializeClosure($value)
     {
-        if (($serializer = $this->resolveEntitySerializer('Closure')) == null) {
+        if (!$this->hasEntitySerializer('Closure')) {
             throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
         }
-        return $serializer->serialize($value);
+
+        return $this->resolveEntitySerializer('Closure')->serialize($value);
     }
 
     /**
@@ -489,10 +499,11 @@ class JsonSerializer
      */
     protected function unserializeClosure($value)
     {
-        if (($serializer = $this->resolveEntitySerializer('Closure')) == null) {
+        if (!$this->hasEntitySerializer('Closure')) {
             throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
         }
-        return $serializer->unserialize($value);
+
+        return $this->resolveEntitySerializer('Closure')->unserialize($value);
     }
 
     /**

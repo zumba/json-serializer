@@ -11,7 +11,7 @@ class SplDoublyLinkedListEntitySerializer implements EntitySerializer
      */
     public function getType()
     {
-        return \SplDoublyLinkedList::class;
+        return 'SplDoublyLinkedList';
     }
 
     /**
