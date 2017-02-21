@@ -2,19 +2,36 @@
 
 namespace Zumba\JsonSerializer\Test\SupportClasses;
 
-class MyTypeSerializer
+use Zumba\Contracts\EntitySerializer;
+
+class MyTypeSerializer implements EntitySerializer
 {
-    public function serialize(MyType $obj)
+    /**
+     * @return string
+     */
+    public function getType()
     {
-        return array('fields' => $obj->field1 . ' ' . $obj->field2);
+        return 'Zumba\JsonSerializer\Test\SupportClasses\MyType';
     }
 
+    /**
+     * @param $obj
+     * @return array
+     */
+    public function serialize($obj)
+    {
+        return ['field1' => $obj->field1 , 'field2' => $obj->field2];
+    }
+
+    /**
+     * @param array $values
+     * @return MyType
+     */
     public function unserialize($values)
     {
-        list($field1, $field2) = explode(' ', $values['fields']);
         $obj = new MyType();
-        $obj->field1 = $field1;
-        $obj->field2 = $field2;
+        $obj->field1 = $values['field1'];
+        $obj->field2 = $values['field2'];
         return $obj;
     }
 }

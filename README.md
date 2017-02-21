@@ -134,13 +134,29 @@ class MyType {
     public $field2;
 }
 
-class MyTypeSerializer {
-    public function serialize(MyType $obj) {
-        return array('fields' => $obj->field1 . ' ' . $obj->field2);
+class MyTypeSerializer implements EntitySerializerContract {
+
+	/**
+     * @return string
+     */
+	public function getType() {
+        return MyType::class ;
+    }
+	
+	/**
+	 * @param $object
+	 * @return array
+	 */
+    public function serialize($object) {
+        return array('fields' => $object->field1 . ' ' . $object->field2);
     }
 
-    public function unserialize($values) {
-        list($field1, $field2) = explode(' ', $values['fields']);
+	/**
+	 * @param array $data
+	 * @return mixed
+	 */
+    public function unserialize($data) {
+        list($field1, $field2) = explode(' ', $data['fields']);
         $obj = new MyType();
         $obj->field1 = $field1;
         $obj->field2 = $field2;
@@ -148,9 +164,10 @@ class MyTypeSerializer {
     }
 }
 
-// map of "class name" => Custom serializer
-$customObjectSerializers['MyType'] = new MyTypeSerializer();
-$jsonSerializer = new Zumba\JsonSerializer\JsonSerializer(null, $customObjectSerializers);
+$jsonSerializer = new Zumba\JsonSerializer\JsonSerializer();
+$jsonSerializer->registerEntitySerializer(new MyTypeSerializer())
+			   ->registerEntitySerializer(new AnotherTypeSerializer());
+			   ->registerEntitySerializer(new OtherTypeSerializer());
 
 $toBeSerialized = new MyType();
 $toBeSerialized->field1 = 'x';

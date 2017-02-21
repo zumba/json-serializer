@@ -5,12 +5,15 @@ namespace Zumba\JsonSerializer;
 use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
-use Zumba\JsonSerializer\Exception\JsonSerializerException;
 use SuperClosure\SerializerInterface as ClosureSerializerInterface;
+use Zumba\Contracts\EntitySerializer;
+use Zumba\JsonSerializer\EntitySerializers\ClosureEntitySerializer;
+use Zumba\JsonSerializer\EntitySerializers\DateTimeEntitySerializer;
+use Zumba\JsonSerializer\EntitySerializers\SplDoublyLinkedListEntitySerializer;
+use Zumba\JsonSerializer\Exception\JsonSerializerException;
 
 class JsonSerializer
 {
-
     const CLASS_IDENTIFIER_KEY = '@type';
     const CLOSURE_IDENTIFIER_KEY = '@closure';
     const UTF8ENCODED_IDENTIFIER_KEY = '@utf8encoded';
@@ -34,7 +37,7 @@ class JsonSerializer
      *
      * @var array
      */
-    protected $objectMapping = array();
+    protected $objectMapping = [];
 
     /**
      * Object mapping index
@@ -51,13 +54,6 @@ class JsonSerializer
     protected $preserveZeroFractionSupport;
 
     /**
-     * Closure serializer instance
-     *
-     * @var ClosureSerializerInterface
-     */
-    protected $closureSerializer;
-
-    /**
      * Map of custom object serializers
      *
      * @var array
@@ -65,16 +61,89 @@ class JsonSerializer
     protected $customObjectSerializerMap;
 
     /**
-     * Constructor.
-     *
-     * @param ClosureSerializerInterface $closureSerializer
-     * @param array $customObjectSerializerMap
+     * JsonSerializer constructor.
+     * @param ClosureSerializerInterface|null $closureSerializer
      */
-    public function __construct(ClosureSerializerInterface $closureSerializer = null, $customObjectSerializerMap = array())
+    public function __construct(ClosureSerializerInterface $closureSerializer = null)
     {
         $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
-        $this->closureSerializer = $closureSerializer;
-        $this->customObjectSerializerMap = (array)$customObjectSerializerMap;
+        $this->registerEntitySerializer(new DateTimeEntitySerializer());
+        $this->registerEntitySerializer(new SplDoublyLinkedListEntitySerializer());
+        if ($closureSerializer != null) {
+            $this->registerEntitySerializer(new ClosureEntitySerializer($closureSerializer));
+        }
+
+    }
+
+    /**
+     * @param $serializer
+     * @return JsonSerializer
+     */
+    public function registerEntitySerializer(EntitySerializer $serializer)
+    {
+        $this->customObjectSerializerMap[$serializer->getType()] = $serializer;
+
+        return $this;
+    }
+
+    /**
+     * @param $className
+     * @return bool
+     */
+    public function hasEntitySerializer($className)
+    {
+        return array_key_exists($className, $this->customObjectSerializerMap);
+    }
+
+    /**
+     * @param $entity
+     * @return EntitySerializer|null
+     */
+    protected function resolveEntitySerializer($entity)
+    {
+        if (($serialiser = $this->resolveEntitySerializerByDirectClassName($entity)) != null) {
+            return $serialiser;
+        }
+
+        if (($serialiser = $this->resolveEntitySerializerByInheritance($entity)) != null) {
+            return $serialiser;
+        }
+    }
+
+    /**
+     * @param $className
+     * @return EntitySerializer|null
+     */
+    protected function resolveEntitySerializerByDirectClassName($className)
+    {
+        if (is_object($className)) {
+            $className = get_class($className);
+        }
+
+        if (is_string($className) && class_exists($className)) {
+            foreach ($this->customObjectSerializerMap as $type => $serialiser) {
+                if ($type == $className) {
+                    return $serialiser;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $object
+     * @return EntitySerializer|null
+     */
+    protected function resolveEntitySerializerByInheritance($object)
+    {
+        if (is_string($object) && class_exists($object)) {
+            list($ref, $object) = $this->getObjectInstance($object);
+        }
+
+        foreach ($this->customObjectSerializerMap as $type => $serialiser) {
+            if ($object instanceof $type) {
+                return $serialiser;
+            }
+        }
     }
 
     /**
@@ -128,7 +197,7 @@ class JsonSerializer
         if (is_string($serializedData)) {
             if (!mb_check_encoding($serializedData, 'UTF-8')) {
                 $serializedData = [
-                    static::SCALAR_IDENTIFIER_KEY => mb_convert_encoding($serializedData, 'UTF-8', '8bit'),
+                    static::SCALAR_IDENTIFIER_KEY      => mb_convert_encoding($serializedData, 'UTF-8', '8bit'),
                     static::UTF8ENCODED_IDENTIFIER_KEY => static::VALUE_UTF8ENCODED,
                 ];
             }
@@ -179,6 +248,105 @@ class JsonSerializer
         return $encoded;
     }
 
+
+    /**
+     * Parse the data to be json encoded
+     *
+     * @param mixed $value
+     * @return mixed
+     * @throws JsonSerializerException
+     */
+    protected function serializeData($value)
+    {
+        if (is_scalar($value) || $value === null) {
+            if (!$this->preserveZeroFractionSupport && is_float($value) && ctype_digit((string)$value)) {
+                // Because the PHP bug #50224, the float numbers with no
+                // precision numbers are converted to integers when encoded
+                $value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
+            }
+            return $value;
+        } elseif (is_resource($value)) {
+            throw new JsonSerializerException('Resource is not supported in JsonSerializer');
+        } elseif (is_array($value)) {
+            return array_map([$this, __FUNCTION__], $value);
+        } elseif ($value instanceof \Closure) {
+            return $this->serializeClosure($value);
+        }
+        return $this->serializeObject($value);
+
+    }
+
+    /**
+     * Extract the data from an object
+     *
+     * @param object $value
+     * @return array
+     */
+    protected function serializeObject($value)
+    {
+        if ($this->objectStorage->contains($value)) {
+            return [static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]];
+        }
+
+        $this->objectStorage->attach($value, $this->objectMappingIndex++);
+        $ref = new ReflectionClass($value);
+        $className = $ref->getName();
+
+        if (($serializer = $this->resolveEntitySerializer($value)) != null) {
+            $data = [static::CLASS_IDENTIFIER_KEY => $className];
+            $data += $serializer->serialize($value);
+            return $data;
+        }
+
+        $paramsToSerialize = $this->getObjectProperties($ref, $value);
+        $data = [static::CLASS_IDENTIFIER_KEY => $className];
+        $data += array_map([$this, 'serializeData'], $this->extractObjectData($value, $ref, $paramsToSerialize));
+        return $data;
+    }
+
+    /**
+     * Return the list of properties to be serialized
+     *
+     * @param ReflectionClass $ref
+     * @param object $value
+     * @return array
+     */
+    protected function getObjectProperties($ref, $value)
+    {
+        if (method_exists($value, '__sleep')) {
+            return $value->__sleep();
+        }
+
+        $props = [];
+        foreach ($ref->getProperties() as $prop) {
+            $props[] = $prop->getName();
+        }
+        return array_unique(array_merge($props, array_keys(get_object_vars($value))));
+    }
+
+    /**
+     * Extract the object data
+     *
+     * @param object $value
+     * @param ReflectionClass $ref
+     * @param array $properties
+     * @return array
+     */
+    protected function extractObjectData($value, $ref, $properties)
+    {
+        $data = [];
+        foreach ($properties as $property) {
+            try {
+                $propRef = $ref->getProperty($property);
+                $propRef->setAccessible(true);
+                $data[$property] = $propRef->getValue($value);
+            } catch (ReflectionException $e) {
+                $data[$property] = $value->$property;
+            }
+        }
+        return $data;
+    }
+
     /**
      * Unserialize the value from JSON
      *
@@ -201,116 +369,6 @@ class JsonSerializer
     }
 
     /**
-     * Parse the data to be json encoded
-     *
-     * @param mixed $value
-     * @return mixed
-     * @throws JsonSerializerException
-     */
-    protected function serializeData($value)
-    {
-        if (is_scalar($value) || $value === null) {
-            if (!$this->preserveZeroFractionSupport && is_float($value) && ctype_digit((string)$value)) {
-                // Because the PHP bug #50224, the float numbers with no
-                // precision numbers are converted to integers when encoded
-                $value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
-            }
-            return $value;
-        }
-        if (is_resource($value)) {
-            throw new JsonSerializerException('Resource is not supported in JsonSerializer');
-        }
-        if (is_array($value)) {
-            return array_map(array($this, __FUNCTION__), $value);
-        }
-        if ($value instanceof \Closure) {
-            if (!$this->closureSerializer) {
-                throw new JsonSerializerException('Closure serializer not given. Unable to serialize closure.');
-            }
-            return array(
-                static::CLOSURE_IDENTIFIER_KEY => true,
-                'value' => $this->closureSerializer->serialize($value)
-            );
-        }
-        return $this->serializeObject($value);
-    }
-
-    /**
-     * Extract the data from an object
-     *
-     * @param object $value
-     * @return array
-     */
-    protected function serializeObject($value)
-    {
-        if ($this->objectStorage->contains($value)) {
-            return array(static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]);
-        }
-        $this->objectStorage->attach($value, $this->objectMappingIndex++);
-
-        $ref = new ReflectionClass($value);
-        $className = $ref->getName();
-        if (array_key_exists($className, $this->customObjectSerializerMap)) {
-            $data = array(static::CLASS_IDENTIFIER_KEY => $className);
-            $data += $this->customObjectSerializerMap[$className]->serialize($value);
-            return $data;
-        }
-
-        $paramsToSerialize = $this->getObjectProperties($ref, $value);
-        $data = array(static::CLASS_IDENTIFIER_KEY => $className);
-
-        if($value instanceof \SplDoublyLinkedList){
-            return $data + array('value' => $value->serialize());
-        }
-
-        $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
-        return $data;
-    }
-
-    /**
-     * Return the list of properties to be serialized
-     *
-     * @param ReflectionClass $ref
-     * @param object $value
-     * @return array
-     */
-    protected function getObjectProperties($ref, $value)
-    {
-        if (method_exists($value, '__sleep')) {
-            return $value->__sleep();
-        }
-
-        $props = array();
-        foreach ($ref->getProperties() as $prop) {
-            $props[] = $prop->getName();
-        }
-        return array_unique(array_merge($props, array_keys(get_object_vars($value))));
-    }
-
-    /**
-     * Extract the object data
-     *
-     * @param object $value
-     * @param ReflectionClass $ref
-     * @param array $properties
-     * @return array
-     */
-    protected function extractObjectData($value, $ref, $properties)
-    {
-        $data = array();
-        foreach ($properties as $property) {
-            try {
-                $propRef = $ref->getProperty($property);
-                $propRef->setAccessible(true);
-                $data[$property] = $propRef->getValue($value);
-            } catch (ReflectionException $e) {
-                $data[$property] = $value->$property;
-            }
-        }
-        return $data;
-    }
-
-    /**
      * Parse the json decode to convert to objects again
      *
      * @param mixed $value
@@ -320,20 +378,13 @@ class JsonSerializer
     {
         if (is_scalar($value) || $value === null) {
             return $value;
-        }
-
-        if (isset($value[static::CLASS_IDENTIFIER_KEY])) {
+        } elseif (isset($value[static::CLASS_IDENTIFIER_KEY])) {
             return $this->unserializeObject($value);
+        } elseif (!empty($value[self::CLOSURE_IDENTIFIER_KEY])) {
+            return $this->unserializeClosure($value);
         }
 
-        if (!empty($value[static::CLOSURE_IDENTIFIER_KEY])) {
-            if (!$this->closureSerializer) {
-                throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
-            }
-            return $this->closureSerializer->unserialize($value['value']);
-        }
-
-        return array_map(array($this, __FUNCTION__), $value);
+        return array_map([$this, __FUNCTION__], $value);
     }
 
     /**
@@ -393,66 +444,66 @@ class JsonSerializer
         if ($className[0] === '@') {
             $index = substr($className, 1);
             return $this->objectMapping[$index];
-        }
-
-        if (array_key_exists($className, $this->customObjectSerializerMap)) {
-            $obj = $this->customObjectSerializerMap[$className]->unserialize($value);
-            $this->objectMapping[$this->objectMappingIndex++] = $obj;
-            return $obj;
-        }
-
-        if (!class_exists($className)) {
+        } elseif (!class_exists($className)) {
             throw new JsonSerializerException('Unable to find class ' . $className);
-        }
-
-        if ($className === 'DateTime') {
-            $obj = $this->restoreUsingUnserialize($className, $value);
+        } elseif (($serialier = $this->resolveEntitySerializer($className)) != null) {
+            $obj = $serialier->unserialize($value);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
             return $obj;
         }
 
-        if (!$this->isSplList($className)) {
-            $ref = new ReflectionClass($className);
-            $obj = $ref->newInstanceWithoutConstructor();
-        } else {
-            $obj = new $className();
-        }
-
-        if ($obj instanceof \SplDoublyLinkedList ) {
-            $obj->unserialize($value['value']);
-            $this->objectMapping[$this->objectMappingIndex++] = $obj;
-            return $obj;
-        }
-
-        $this->objectMapping[$this->objectMappingIndex++] = $obj;
+        list($ref, $object) = $this->getObjectInstance($className);
+        $this->objectMapping[$this->objectMappingIndex++] = $object;
         foreach ($value as $property => $propertyValue) {
             try {
                 $propRef = $ref->getProperty($property);
                 $propRef->setAccessible(true);
-                $propRef->setValue($obj, $this->unserializeData($propertyValue));
+                $propRef->setValue($object, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
-                $obj->$property = $this->unserializeData($propertyValue);
+                $object->$property = $this->unserializeData($propertyValue);
             }
         }
-        if (method_exists($obj, '__wakeup')) {
-            $obj->__wakeup();
+
+        if (method_exists($object, '__wakeup')) {
+            $object->__wakeup();
         }
-        return $obj;
+        return $object;
     }
 
     /**
-     * @return boolean
+     * @param $className
+     * @return object
      */
-    protected function isSplList($className)
+    protected function getObjectInstance($className)
     {
-        return in_array($className, array('SplQueue', 'SplDoublyLinkedList', 'SplStack'));
+        $ref = new ReflectionClass($className);
+        return [$ref, $ref->newInstanceWithoutConstructor()];
     }
 
-    protected function restoreUsingUnserialize($className, $attributes)
+    /**
+     * @param $value
+     * @return array
+     */
+    protected function serializeClosure($value)
     {
-        $obj = (object)$attributes;
-        $serialized = preg_replace('|^O:\d+:"\w+":|', 'O:' . strlen($className) . ':"' . $className . '":', serialize($obj));
-        return unserialize($serialized);
+        if (!$this->hasEntitySerializer('Closure')) {
+            throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
+        }
+
+        return $this->resolveEntitySerializer('Closure')->serialize($value);
+    }
+
+    /**
+     * @param $value
+     * @return mixed
+     */
+    protected function unserializeClosure($value)
+    {
+        if (!$this->hasEntitySerializer('Closure')) {
+            throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
+        }
+
+        return $this->resolveEntitySerializer('Closure')->unserialize($value);
     }
 
     /**
@@ -463,7 +514,7 @@ class JsonSerializer
     protected function reset()
     {
         $this->objectStorage = new SplObjectStorage();
-        $this->objectMapping = array();
+        $this->objectMapping = [];
         $this->objectMappingIndex = 0;
     }
 }

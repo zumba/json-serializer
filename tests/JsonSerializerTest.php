@@ -2,9 +2,10 @@
 
 namespace Zumba\JsonSerializer\Test;
 
-use Zumba\JsonSerializer\JsonSerializer;
 use stdClass;
 use SuperClosure\Serializer as ClosureSerializer;
+use Zumba\JsonSerializer\JsonSerializer;
+use Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer;
 
 class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 {
@@ -24,8 +25,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         parent::setUp();
-        $customObjectSerializerMap['Zumba\\JsonSerializer\\Test\\SupportClasses\\MyType'] = new \Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer();
-        $this->serializer = new JsonSerializer(null, $customObjectSerializerMap);
+        $this->serializer = new JsonSerializer();
+        $this->serializer->registerEntitySerializer(new MyTypeSerializer());
     }
 
     /**
@@ -60,6 +61,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         setlocale(LC_NUMERIC, $originalLocale);
     }
+
     /**
      * Test unserialization of scalar values
      *
@@ -80,20 +82,20 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function scalarData()
     {
-        return array(
-            array('testing', '"testing"'),
-            array(123, '123'),
-            array(0, '0'),
-            array(0.0, '0.0'),
-            array(17.0, '17.0'),
-            array(17e1, '170.0'),
-            array(17.2, '17.2'),
-            array(true, 'true'),
-            array(false, 'false'),
-            array(null, 'null'),
+        return [
+            ['testing', '"testing"'],
+            [123, '123'],
+            [0, '0'],
+            [0.0, '0.0'],
+            [17.0, '17.0'],
+            [17e1, '170.0'],
+            [17.2, '17.2'],
+            [true, 'true'],
+            [false, 'false'],
+            [null, 'null'],
             // Non UTF8
-            array('ßåö', '"ßåö"')
-        );
+            ['ßåö', '"ßåö"']
+        ];
     }
 
     /**
@@ -115,9 +117,11 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function testSerializeClosureWithoutSerializer()
     {
         $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
-        $this->serializer->serialize(array('func' => function () {
-            echo 'whoops';
-        }));
+        $this->serializer->serialize([
+            'func' => function () {
+                echo 'whoops';
+            }
+        ]);
     }
 
     /**
@@ -153,16 +157,16 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function arrayNoObjectData()
     {
-        return array(
-            array(array(1, 2, 3), '[1,2,3]'),
-            array(array(1, 'abc', false), '[1,"abc",false]'),
-            array(array('a' => 1, 'b' => 2, 'c' => 3), '{"a":1,"b":2,"c":3}'),
-            array(array('integer' => 1, 'string' => 'abc', 'bool' => false), '{"integer":1,"string":"abc","bool":false}'),
-            array(array(1, array('nested')), '[1,["nested"]]'),
-            array(array('integer' => 1, 'array' => array('nested')), '{"integer":1,"array":["nested"]}'),
-            array(array('integer' => 1, 'array' => array('nested' => 'object')), '{"integer":1,"array":{"nested":"object"}}'),
-            array(array(1.0, 2, 3e1), '[1.0,2,30.0]'),
-        );
+        return [
+            [[1, 2, 3], '[1,2,3]'],
+            [[1, 'abc', false], '[1,"abc",false]'],
+            [['a' => 1, 'b' => 2, 'c' => 3], '{"a":1,"b":2,"c":3}'],
+            [['integer' => 1, 'string' => 'abc', 'bool' => false], '{"integer":1,"string":"abc","bool":false}'],
+            [[1, ['nested']], '[1,["nested"]]'],
+            [['integer' => 1, 'array' => ['nested']], '{"integer":1,"array":["nested"]}'],
+            [['integer' => 1, 'array' => ['nested' => 'object']], '{"integer":1,"array":{"nested":"object"}}'],
+            [[1.0, 2, 3e1], '[1.0,2,30.0]'],
+        ];
     }
 
     /**
@@ -176,7 +180,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('{"@type":"stdClass"}', $this->serializer->serialize($obj));
 
         $obj = $empty = new SupportClasses\EmptyClass();
-        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}', $this->serializer->serialize($obj));
+        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}',
+            $this->serializer->serialize($obj));
 
         $obj = new SupportClasses\AllVisibilities();
         $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":"this is public","prot":"protected","priv":"dont tell anyone"}';
@@ -190,7 +195,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\AllVisibilities","pub":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"},"prot":"protected","priv":"dont tell anyone"}';
         $this->assertSame($expected, $this->serializer->serialize($obj));
 
-        $array = array('instance' => $empty);
+        $array = ['instance' => $empty];
         $expected = '{"instance":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
         $this->assertSame($expected, $this->serializer->serialize($array));
 
@@ -240,7 +245,22 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $obj = new SupportClasses\MyType();
         $obj->field1 = 'x';
         $obj->field2 = 'y';
-        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}', $this->serializer->serialize($obj));
+        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","field1":"x","field2":"y"}',
+            $this->serializer->serialize($obj));
+    }
+
+    /**
+     * Test serialization of objects using the custom serializers
+     *
+     * @return void
+     */
+    public function testCustomObjectInheritanceSerializer()
+    {
+        $obj = new SupportClasses\MySubType();
+        $obj->field1 = 'x';
+        $obj->field2 = 'y';
+        $this->assertSame('{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MySubType","field1":"x","field2":"y"}',
+            $this->serializer->serialize($obj));
     }
 
     /**
@@ -250,9 +270,23 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testCustomObjectsUnserializer()
     {
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}';
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","field1":"x","field2":"y"}';
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\MyType', $obj);
+        $this->assertAttributeSame('x', 'field1', $obj);
+        $this->assertAttributeSame('y', 'field2', $obj);
+    }
+
+    /**
+     * Test unserialization of objects using the custom serializers
+     *
+     * @return void
+     */
+    public function testCustomObjectsInheritanceUnserializer()
+    {
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MySubType","field1":"x","field2":"y"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\MySubType', $obj);
         $this->assertAttributeSame('x', 'field1', $obj);
         $this->assertAttributeSame('y', 'field2', $obj);
     }
@@ -301,12 +335,12 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $closureSerializer = new ClosureSerializer();
         $serializer = new JsonSerializer($closureSerializer);
-        $serialized = $serializer->serialize(array(
+        $serialized = $serializer->serialize([
             'func' => function () {
                 return 'it works';
             },
             'nice' => true
-        ));
+        ]);
 
         $unserialized = $serializer->unserialize($serialized);
         $this->assertTrue(is_array($unserialized));
@@ -328,12 +362,12 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $closureSerializer = new ClosureSerializer();
         $serializer = new JsonSerializer($closureSerializer);
-        $serialized = $serializer->serialize(array(
+        $serialized = $serializer->serialize([
             'func' => function () {
                 return 'it works';
             },
             'nice' => true
-        ));
+        ]);
 
         $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $this->serializer->unserialize($serialized);
@@ -440,7 +474,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         }
 
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
-        $this->serializer->serialize(array(NAN));
+        $this->serializer->serialize([NAN]);
     }
 
     /**
@@ -535,5 +569,16 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $list->push(42);
         $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
         $this->assertTrue($list->serialize() === $unserialized->serialize());
+    }
+
+    /**
+     * Test serialization of SplDoubleLinkedList
+     *
+     * @return void
+     */
+    public function testEntitySerializerRegistration()
+    {
+        $this->assertTrue($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MyType'));
+        $this->assertFalse($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MySubType'));
     }
 }
