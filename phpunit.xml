@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<phpunit backupGlobals="false"
-		 backupStaticAttributes="false"
-		 convertErrorsToExceptions="true"
-		 convertNoticesToExceptions="true"
-		 convertWarningsToExceptions="true"
-		 processIsolation="false"
-		 stopOnFailure="false"
-		 syntaxCheck="true"
-		 strict="true"
-		 colors="true">
-	<testsuites>
-		<testsuite>
-			<directory>./tests</directory>
-		</testsuite>
-	</testsuites>
-	<filter>
-		<whitelist addUncoveredFilesFromWhitelist="true">
-			<directory>./src</directory>
-		</whitelist>
-	</filter>
+<phpunit bootstrap="vendor/autoload.php"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         syntaxCheck="true"
+         strict="true"
+         colors="true">
+    <testsuites>
+        <testsuite>
+            <directory>./tests</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory>./src</directory>
+        </whitelist>
+    </filter>
 </phpunit>
