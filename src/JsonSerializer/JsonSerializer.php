@@ -477,7 +477,7 @@ class JsonSerializer
      */
     protected function serializeClosure($value)
     {
-        if (($serializer = $this->resolveEntitySerializer(\Closure::class)) == null) {
+        if (($serializer = $this->resolveEntitySerializer('Closure')) == null) {
             throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
         }
         return $serializer->serialize($value);
@@ -489,7 +489,7 @@ class JsonSerializer
      */
     protected function unserializeClosure($value)
     {
-        if (($serializer = $this->resolveEntitySerializer(\Closure::class)) == null) {
+        if (($serializer = $this->resolveEntitySerializer('Closure')) == null) {
             throw new JsonSerializerException('Closure serializer not provided to unserialize closure');
         }
         return $serializer->unserialize($value);
