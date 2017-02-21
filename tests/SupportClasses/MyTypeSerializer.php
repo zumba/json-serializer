@@ -11,7 +11,7 @@ class MyTypeSerializer implements EntitySerializer
      */
     public function getType()
     {
-        return MyType::class;
+        return 'Zumba\JsonSerializer\Test\SupportClasses\MyType';
     }
 
     /**

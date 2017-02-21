@@ -578,7 +578,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testEntitySerializerRegistration()
     {
-        $this->assertTrue($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer'));
-        $this->assertFalse($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MySubTypeSerializer'));
+        $this->assertTrue($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MyType'));
+        $this->assertFalse($this->serializer->hasEntitySerializer('Zumba\JsonSerializer\Test\SupportClasses\MySubType'));
     }
 }
