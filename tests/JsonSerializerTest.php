@@ -376,6 +376,66 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Test undeclared properties setter (valid)
+     *
+     * @return void
+     */
+    public function testSetUnserializeUndeclaredPropertyModeValid() {
+        $value = $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_SET);
+        $this->assertSame($value, $this->serializer);
+    }
+
+    /**
+     * Test undeclared properties setter (invalid)
+     *
+     * @return void
+     */
+    public function testSetUnserializeUndeclaredPropertyModeInvalid() {
+        $this->setExpectedException('InvalidArgumentException');
+        $value = $this->serializer->setUnserializeUndeclaredPropertyMode('bad value');
+    }
+
+    /**
+     * Test unserialization of undeclared properties in SET mode
+     *
+     * @return void
+     */
+    public function testUnserializeUndeclaredPropertySet() {
+        $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_SET);
+
+        $serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('stdClass', $obj->sub);
+        $this->assertSame('value', $obj->sub->key);
+    }
+
+    /**
+     * Test unserialization of undeclared properties in IGNORE mode
+     *
+     * @return void
+     */
+    public function testUnserializeUndeclaredPropertyIgnore() {
+        $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_IGNORE);
+
+        $serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertFalse(isset($obj->sub));
+    }
+
+    /**
+     * Test unserialization of undeclared properties in EXCEPTION mode
+     *
+     * @return void
+     */
+    public function testUnserializeUndeclaredPropertyException() {
+        $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_EXCEPTION);
+
+        $this->setExpectedException('Zumba\Exception\JsonSerializerException');
+        $serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
+        $obj = $this->serializer->unserialize($serialized);
+    }
+
+    /**
      * Test serialize with recursion
      *
      * @return void
