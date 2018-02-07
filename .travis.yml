@@ -17,4 +17,4 @@ script:
   - if [ $TRAVIS_PHP_VERSION = '7.0' ]; then vendor/bin/phpunit --coverage-clover build/logs/clover.xml; else vendor/bin/phpunit; fi
 
 after_success:
-  - if [ $TRAVIS_PHP_VERSION = '7.0' ]; then php vendor/bin/coveralls; fi
+  - if [ $TRAVIS_PHP_VERSION = '7.0' ]; then php vendor/bin/php-coveralls; fi

@@ -2,6 +2,7 @@
 
 namespace Zumba\JsonSerializer;
 
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
 use SplObjectStorage;
@@ -19,6 +20,10 @@ class JsonSerializer
 
     const KEY_UTF8ENCODED = 1;
     const VALUE_UTF8ENCODED = 2;
+
+    const UNDECLARED_PROPERTY_MODE_SET = 1;
+    const UNDECLARED_PROPERTY_MODE_IGNORE = 2;
+    const UNDECLARED_PROPERTY_MODE_EXCEPTION = 3;
 
     /**
      * Storage for object
@@ -63,6 +68,13 @@ class JsonSerializer
      * @var array
      */
     protected $customObjectSerializerMap;
+
+    /**
+     * Undefined Attribute Mode
+     *
+     * @var integer
+     */
+    protected $undefinedAttributeMode = self::UNDECLARED_PROPERTY_MODE_SET;
 
     /**
      * Constructor.
@@ -198,6 +210,27 @@ class JsonSerializer
         }
 
         return $this->unserializeData($data);
+    }
+
+    /**
+     * Set unserialization mode for undeclared class properties
+     *
+     * @param integer $value One of the JsonSerializer::UNDECLARED_PROPERTY_MODE_*
+     * @return self
+     * @throws InvalidArgumentException When the value is not one of the UNDECLARED_PROPERTY_MODE_* options
+     */
+    public function setUnserializeUndeclaredPropertyMode($value)
+    {
+        $availableOptions = [
+            static::UNDECLARED_PROPERTY_MODE_SET,
+            static::UNDECLARED_PROPERTY_MODE_IGNORE,
+            static::UNDECLARED_PROPERTY_MODE_EXCEPTION
+        ];
+        if (!in_array($value, $availableOptions)) {
+            throw new InvalidArgumentException('Invalid value.');
+        }
+        $this->undefinedAttributeMode = $value;
+        return $this;
     }
 
     /**
@@ -431,7 +464,16 @@ class JsonSerializer
                 $propRef->setAccessible(true);
                 $propRef->setValue($obj, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
-                $obj->$property = $this->unserializeData($propertyValue);
+                switch ($this->undefinedAttributeMode) {
+                case static::UNDECLARED_PROPERTY_MODE_SET:
+                    $obj->$property = $this->unserializeData($propertyValue);
+                    break;
+                case static::UNDECLARED_PROPERTY_MODE_IGNORE:
+                    break;
+                case static::UNDECLARED_PROPERTY_MODE_EXCEPTION:
+                    throw new JsonSerializerException('Undefined attribute detected during unserialization');
+                    break;
+                }
             }
         }
         if (method_exists($obj, '__wakeup')) {
