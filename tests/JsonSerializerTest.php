@@ -596,4 +596,92 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
         $this->assertTrue($list->serialize() === $unserialized->serialize());
     }
+
+    /**
+     * Test the guard around only supported classes tripping
+     *
+     * @return void
+     */
+    public function testSerializeOfUnsupportedClass()
+    {
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
+        $local_serializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    []
+                                )
+                            ;
+        $local_serializer->serialize(new stdClass);
+    }
+
+    /**
+     * Test the guard around only supported classes working
+     *
+     * @return void
+     */
+    public function testSerializeOfSupportedClass()
+    {
+        $local_serializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    ['stdClass']
+                                )
+                            ;
+        $local_serializer->serialize(new stdClass);
+    }
+
+    /**
+     * Test the guard around only supported classes tripping
+     *
+     * @return void
+     */
+    public function testUnserializeOfUnsupportedClass()
+    {
+        $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
+
+        //Create a serializer with the supported class and serialize the object,
+        //this should work just fine
+        $local_serializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    ['stdClass']
+                                )
+                            ;
+        $json = $local_serializer->serialize(new stdClass);
+
+        //Now, create a new serializer but have it list no supported classes and
+        //try to unserialize the above
+        $local_unserializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    []
+                                )
+                            ;
+
+        //This should throw
+        $local_unserializer->unserialize($json);
+    }
+
+    /**
+     * Test the serialization of closures when not providing closure serializer
+     *
+     * @return void
+     */
+    public function testUnserializeOfSupportedClass()
+    {
+        //Create a serializer with the supported class and serialize the object,
+        //this should work just fine
+        $local_serializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    ['stdClass']
+                                )
+                            ;
+        $json = $local_serializer->serialize(new stdClass);
+
+        //Now, create a new serializer but with the same list of supported classes
+        $local_unserializer = (new JsonSerializer())
+                                ->withSupportedClasses(
+                                    ['stdClass']
+                                )
+                            ;
+
+        //This should work
+        $local_unserializer->unserialize($json);
+    }
 }

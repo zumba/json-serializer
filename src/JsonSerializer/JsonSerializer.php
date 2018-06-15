@@ -77,6 +77,13 @@ class JsonSerializer
     protected $undefinedAttributeMode = self::UNDECLARED_PROPERTY_MODE_SET;
 
     /**
+     * Undefined Attribute Mode
+     *
+     * @var false|array
+     */
+    protected $supportedClasses = false;
+
+    /**
      * Constructor.
      *
      * @param ClosureSerializerInterface $closureSerializer
@@ -87,6 +94,21 @@ class JsonSerializer
         $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
         $this->closureSerializer = $closureSerializer;
         $this->customObjectSerializerMap = (array)$customObjectSerializerMap;
+    }
+
+    public function withSupportedClasses($supportedClasses)
+    {
+        $this->supportedClasses = $supportedClasses;
+        return $this;
+    }
+
+    public function isClassSupported($className)
+    {
+        if(false === $this->supportedClasses){
+            return true;
+        }
+
+        return in_array($className, $this->supportedClasses);
     }
 
     /**
@@ -283,6 +305,11 @@ class JsonSerializer
 
         $ref = new ReflectionClass($value);
         $className = $ref->getName();
+
+        if(!$this->isClassSupported($className)){
+            throw new JsonSerializerException('The supplied class was not on the explicitly allowed list of supported classes. Unable to serialize object.');
+        }
+
         if (array_key_exists($className, $this->customObjectSerializerMap)) {
             $data = array(static::CLASS_IDENTIFIER_KEY => $className);
             $data += $this->customObjectSerializerMap[$className]->serialize($value);
@@ -422,6 +449,10 @@ class JsonSerializer
     {
         $className = $value[static::CLASS_IDENTIFIER_KEY];
         unset($value[static::CLASS_IDENTIFIER_KEY]);
+
+        if(!$this->isClassSupported($className)){
+            throw new JsonSerializerException('The supplied class was not on the explicitly allowed list of supported classes. Unable to unserialize object.');
+        }
 
         if ($className[0] === '@') {
             $index = substr($className, 1);
