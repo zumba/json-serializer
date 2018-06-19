@@ -55,7 +55,9 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         }
 
         $data = [1.0, 1.1, 0.00000000001, 1.999999999999, 223423.123456789, 1e5, 1e11];
-        $expected = '[1.0,1.1,1.0e-11,1.999999999999,223423.12345679,100000.0,100000000000.0]';
+        $expected = version_compare(PHP_VERSION, '7.1', '>=') ?
+            '[1.0,1.1,1.0e-11,1.999999999999,223423.123456789,100000.0,100000000000.0]' :
+            '[1.0,1.1,1.0e-11,1.999999999999,223423.12345679,100000.0,100000000000.0]';
         $this->assertSame($expected, $this->serializer->serialize($data));
 
         setlocale(LC_NUMERIC, $originalLocale);
