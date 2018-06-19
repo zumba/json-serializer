@@ -80,10 +80,12 @@ class JsonSerializer
      * Constructor.
      *
      * @param ClosureSerializerInterface $closureSerializer
-     * @param array $customObjectSerializerMap
+     * @param array                      $customObjectSerializerMap
      */
-    public function __construct(ClosureSerializerInterface $closureSerializer = null, $customObjectSerializerMap = array())
-    {
+    public function __construct(
+        ClosureSerializerInterface $closureSerializer = null,
+        $customObjectSerializerMap = array()
+    ) {
         $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
         $this->closureSerializer = $closureSerializer;
         $this->customObjectSerializerMap = (array)$customObjectSerializerMap;
@@ -92,7 +94,7 @@ class JsonSerializer
     /**
      * Serialize the value in JSON
      *
-     * @param mixed $value
+     * @param  mixed $value
      * @return string JSON encoded
      * @throws JsonSerializerException
      */
@@ -131,6 +133,7 @@ class JsonSerializer
     }
 
     /**
+     *
      * @param mixed $serializedData
      *
      * @return array
@@ -157,13 +160,15 @@ class JsonSerializer
 
             if (!mb_check_encoding($key, 'UTF-8')) {
                 $key = mb_convert_encoding($key, 'UTF-8', '8bit');
-                $encodedKeys[$key] = (isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0) | static::KEY_UTF8ENCODED;
+                $encodedKeys[$key] = isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0;
+                $encodedKeys[$key] |= static::KEY_UTF8ENCODED;
             }
 
             if (is_string($value)) {
                 if (!mb_check_encoding($value, 'UTF-8')) {
                     $value = mb_convert_encoding($value, 'UTF-8', '8bit');
-                    $encodedKeys[$key] = (isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0) | static::VALUE_UTF8ENCODED;
+                    $encodedKeys[$key] = isset($encodedKeys[$key]) ? $encodedKeys[$key] : 0;
+                    $encodedKeys[$key] |= static::VALUE_UTF8ENCODED;
                 }
             }
 
@@ -180,7 +185,7 @@ class JsonSerializer
     /**
      * Execute post-encoding actions
      *
-     * @param string $encoded
+     * @param  string $encoded
      * @return string
      */
     protected function processEncodedValue($encoded)
@@ -194,7 +199,7 @@ class JsonSerializer
     /**
      * Unserialize the value from JSON
      *
-     * @param string $value
+     * @param  string $value
      * @return mixed
      */
     public function unserialize($value)
@@ -215,7 +220,7 @@ class JsonSerializer
     /**
      * Set unserialization mode for undeclared class properties
      *
-     * @param integer $value One of the JsonSerializer::UNDECLARED_PROPERTY_MODE_*
+     * @param  integer $value One of the JsonSerializer::UNDECLARED_PROPERTY_MODE_*
      * @return self
      * @throws InvalidArgumentException When the value is not one of the UNDECLARED_PROPERTY_MODE_* options
      */
@@ -236,7 +241,7 @@ class JsonSerializer
     /**
      * Parse the data to be json encoded
      *
-     * @param mixed $value
+     * @param  mixed $value
      * @return mixed
      * @throws JsonSerializerException
      */
@@ -271,7 +276,7 @@ class JsonSerializer
     /**
      * Extract the data from an object
      *
-     * @param object $value
+     * @param  object $value
      * @return array
      */
     protected function serializeObject($value)
@@ -292,7 +297,7 @@ class JsonSerializer
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
         $data = array(static::CLASS_IDENTIFIER_KEY => $className);
 
-        if($value instanceof \SplDoublyLinkedList){
+        if ($value instanceof \SplDoublyLinkedList) {
             return $data + array('value' => $value->serialize());
         }
 
@@ -303,8 +308,8 @@ class JsonSerializer
     /**
      * Return the list of properties to be serialized
      *
-     * @param ReflectionClass $ref
-     * @param object $value
+     * @param  ReflectionClass $ref
+     * @param  object          $value
      * @return array
      */
     protected function getObjectProperties($ref, $value)
@@ -323,9 +328,9 @@ class JsonSerializer
     /**
      * Extract the object data
      *
-     * @param object $value
-     * @param ReflectionClass $ref
-     * @param array $properties
+     * @param  object          $value
+     * @param  ReflectionClass $ref
+     * @param  array           $properties
      * @return array
      */
     protected function extractObjectData($value, $ref, $properties)
@@ -346,7 +351,7 @@ class JsonSerializer
     /**
      * Parse the json decode to convert to objects again
      *
-     * @param mixed $value
+     * @param  mixed $value
      * @return mixed
      */
     protected function unserializeData($value)
@@ -370,6 +375,7 @@ class JsonSerializer
     }
 
     /**
+     *
      * @param mixed $serializedData
      *
      * @return mixed
@@ -414,7 +420,7 @@ class JsonSerializer
     /**
      * Convert the serialized array into an object
      *
-     * @param array $value
+     * @param  array $value
      * @return object
      * @throws JsonSerializerException
      */
@@ -451,7 +457,7 @@ class JsonSerializer
             $obj = new $className();
         }
 
-        if ($obj instanceof \SplDoublyLinkedList ) {
+        if ($obj instanceof \SplDoublyLinkedList) {
             $obj->unserialize($value['value']);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
             return $obj;
@@ -465,14 +471,14 @@ class JsonSerializer
                 $propRef->setValue($obj, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
                 switch ($this->undefinedAttributeMode) {
-                case static::UNDECLARED_PROPERTY_MODE_SET:
-                    $obj->$property = $this->unserializeData($propertyValue);
-                    break;
-                case static::UNDECLARED_PROPERTY_MODE_IGNORE:
-                    break;
-                case static::UNDECLARED_PROPERTY_MODE_EXCEPTION:
-                    throw new JsonSerializerException('Undefined attribute detected during unserialization');
-                    break;
+                    case static::UNDECLARED_PROPERTY_MODE_SET:
+                        $obj->$property = $this->unserializeData($propertyValue);
+                        break;
+                    case static::UNDECLARED_PROPERTY_MODE_IGNORE:
+                        break;
+                    case static::UNDECLARED_PROPERTY_MODE_EXCEPTION:
+                        throw new JsonSerializerException('Undefined attribute detected during unserialization');
+                        break;
                 }
             }
         }
@@ -483,6 +489,7 @@ class JsonSerializer
     }
 
     /**
+     *
      * @return boolean
      */
     protected function isSplList($className)
@@ -493,7 +500,11 @@ class JsonSerializer
     protected function restoreUsingUnserialize($className, $attributes)
     {
         $obj = (object)$attributes;
-        $serialized = preg_replace('|^O:\d+:"\w+":|', 'O:' . strlen($className) . ':"' . $className . '":', serialize($obj));
+        $serialized = preg_replace(
+            '|^O:\d+:"\w+":|',
+            'O:' . strlen($className) . ':"' . $className . '":',
+            serialize($obj)
+        );
         return unserialize($serialized);
     }
 

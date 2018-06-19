@@ -32,9 +32,9 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * Test serialization of scalar values
      *
      * @dataProvider scalarData
-     * @param mixed $scalar
-     * @param string $jsoned
-     * @return void
+     * @param        mixed  $scalar
+     * @param        string $jsoned
+     * @return       void
      */
     public function testSerializeScalar($scalar, $jsoned)
     {
@@ -66,9 +66,9 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * Test unserialization of scalar values
      *
      * @dataProvider scalarData
-     * @param mixed $scalar
-     * @param string $jsoned
-     * @return void
+     * @param        mixed  $scalar
+     * @param        string $jsoned
+     * @return       void
      */
     public function testUnserializeScalar($scalar, $jsoned)
     {
@@ -117,18 +117,20 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     public function testSerializeClosureWithoutSerializer()
     {
         $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
-        $this->serializer->serialize(array('func' => function () {
-            echo 'whoops';
-        }));
+        $this->serializer->serialize(
+            array('func' => function () {
+                echo 'whoops';
+            })
+        );
     }
 
     /**
      * Test serialization of array without objects
      *
      * @dataProvider arrayNoObjectData
-     * @param array $array
-     * @param string $jsoned
-     * @return void
+     * @param        array  $array
+     * @param        string $jsoned
+     * @return       void
      */
     public function testSerializeArrayNoObject($array, $jsoned)
     {
@@ -139,9 +141,9 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      * Test unserialization of array without objects
      *
      * @dataProvider arrayNoObjectData
-     * @param array $array
-     * @param string $jsoned
-     * @return void
+     * @param        array  $array
+     * @param        string $jsoned
+     * @return       void
      */
     public function testUnserializeArrayNoObject($array, $jsoned)
     {
@@ -303,12 +305,14 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $closureSerializer = new ClosureSerializer();
         $serializer = new JsonSerializer($closureSerializer);
-        $serialized = $serializer->serialize(array(
+        $serialized = $serializer->serialize(
+            array(
             'func' => function () {
                 return 'it works';
             },
             'nice' => true
-        ));
+            )
+        );
 
         $unserialized = $serializer->unserialize($serialized);
         $this->assertTrue(is_array($unserialized));
@@ -330,12 +334,14 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
 
         $closureSerializer = new ClosureSerializer();
         $serializer = new JsonSerializer($closureSerializer);
-        $serialized = $serializer->serialize(array(
+        $serialized = $serializer->serialize(
+            array(
             'func' => function () {
                 return 'it works';
             },
             'nice' => true
-        ));
+            )
+        );
 
         $this->setExpectedException('Zumba\JsonSerializer\Exception\JsonSerializerException');
         $this->serializer->unserialize($serialized);
@@ -382,7 +388,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @return void
      */
-    public function testSetUnserializeUndeclaredPropertyModeValid() {
+    public function testSetUnserializeUndeclaredPropertyModeValid()
+    {
         $value = $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_SET);
         $this->assertSame($value, $this->serializer);
     }
@@ -392,7 +399,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @return void
      */
-    public function testSetUnserializeUndeclaredPropertyModeInvalid() {
+    public function testSetUnserializeUndeclaredPropertyModeInvalid()
+    {
         $this->setExpectedException('InvalidArgumentException');
         $value = $this->serializer->setUnserializeUndeclaredPropertyMode('bad value');
     }
@@ -402,7 +410,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @return void
      */
-    public function testUnserializeUndeclaredPropertySet() {
+    public function testUnserializeUndeclaredPropertySet()
+    {
         $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_SET);
 
         $serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
@@ -416,7 +425,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @return void
      */
-    public function testUnserializeUndeclaredPropertyIgnore() {
+    public function testUnserializeUndeclaredPropertyIgnore()
+    {
         $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_IGNORE);
 
         $serialized = '{"@type":"stdClass","sub":{"@type":"stdClass","key":"value"}}';
@@ -429,7 +439,8 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      *
      * @return void
      */
-    public function testUnserializeUndeclaredPropertyException() {
+    public function testUnserializeUndeclaredPropertyException()
+    {
         $this->serializer->setUnserializeUndeclaredPropertyMode(JsonSerializer::UNDECLARED_PROPERTY_MODE_EXCEPTION);
 
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
@@ -506,6 +517,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     *
      * @return void
      */
     public function testSerializeBinaryStringScalar()
@@ -520,6 +532,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     *
      * @return void
      */
     public function testSerializeArrayWithBinaryStringsAsValues()
@@ -554,6 +567,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     *
      * @return void
      */
     public function testSerializeObjectWithBinaryStrings()
