@@ -214,6 +214,7 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
     {
         $serialized = '{"@type":"stdClass"}';
         $obj = $this->serializer->unserialize($serialized);
+        // var_dump($obj);
         $this->assertInstanceOf('stdClass', $obj);
 
         $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}';
@@ -611,5 +612,26 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
         $list->push(42);
         $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
         $this->assertTrue($list->serialize() === $unserialized->serialize());
+    }
+
+    /**
+     * Test serialization of Array references
+     *
+     * @return void
+     */
+    public function testSerializationOfArrayReferences()
+    {
+        $obj = new SupportClasses\EmptyClass();
+        $obj->arr = array(1,2);
+        $obj->arr2 = array(3,4);
+        $obj->arr_copy = &$obj->arr;
+        $obj->arr2_copy = &$obj->arr2;
+
+        $unserialized = $this->serializer->unserialize($this->serializer->serialize($obj));
+
+        $unserialized->arr[] = "This is arr";
+        $unserialized->arr2[] = "This is arr2";
+        $this->assertTrue($unserialized->arr_copy[2] === "This is arr");
+        $this->assertTrue($unserialized->arr2_copy[2] === "This is arr2");
     }
 }

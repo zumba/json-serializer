@@ -11,6 +11,8 @@ use SuperClosure\SerializerInterface as ClosureSerializerInterface;
 
 class JsonSerializer
 {
+    protected $arrayStorage = [];
+    protected $arrayMapping = [];
 
     const CLASS_IDENTIFIER_KEY = '@type';
     const CLOSURE_IDENTIFIER_KEY = '@closure';
@@ -245,7 +247,7 @@ class JsonSerializer
      * @return mixed
      * @throws JsonSerializerException
      */
-    protected function serializeData($value)
+    protected function serializeData(&$value)
     {
         if (is_scalar($value) || $value === null) {
             if (!$this->preserveZeroFractionSupport && is_float($value) && ctype_digit((string)$value)) {
@@ -259,18 +261,31 @@ class JsonSerializer
             throw new JsonSerializerException('Resource is not supported in JsonSerializer');
         }
         if (is_array($value)) {
-            return array_map(array($this, __FUNCTION__), $value);
+            $id = uniqid();
+            $value[$id] = true;
+            foreach($this->arrayStorage as $key => $item) {
+                if(isset($item[$id])) {
+                    unset($value[$id]);
+                    return array(static::CLASS_IDENTIFIER_KEY => '[' . $key. ']');
+                }
+            }
+            unset($value[$id]);
+            $output = array_map(array($this, __FUNCTION__), $value);
+            $this->arrayStorage[$this->objectMappingIndex++] = &$value;
+            return $output;
         }
         if ($value instanceof \Closure) {
             if (!$this->closureSerializer) {
                 throw new JsonSerializerException('Closure serializer not given. Unable to serialize closure.');
             }
-            return array(
+            $output = array(
                 static::CLOSURE_IDENTIFIER_KEY => true,
                 'value' => $this->closureSerializer->serialize($value)
             );
+            return $output;
         }
-        return $this->serializeObject($value);
+        $obj = $this->serializeObject($value);
+        return $obj;
     }
 
     /**
@@ -301,7 +316,10 @@ class JsonSerializer
             return $data + array('value' => $value->serialize());
         }
 
-        $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
+        $od = &$this->extractObjectData($value, $ref, $paramsToSerialize);
+        foreach($od as $k => $v) {
+            $data[$k] = $this->serializeData($od[$k]);
+        }
         return $data;
     }
 
@@ -320,7 +338,8 @@ class JsonSerializer
 
         $props = array();
         foreach ($ref->getProperties() as $prop) {
-            $props[] = $prop->getName();
+            if(!$prop->isStatic())
+                $props[] = $prop->getName();
         }
         return array_unique(array_merge($props, array_keys(get_object_vars($value))));
     }
@@ -333,16 +352,31 @@ class JsonSerializer
      * @param  array           $properties
      * @return array
      */
-    protected function extractObjectData($value, $ref, $properties)
+    protected function& extractObjectData($value, $ref, $properties)
     {
         $data = array();
         foreach ($properties as $property) {
             try {
-                $propRef = $ref->getProperty($property);
-                $propRef->setAccessible(true);
-                $data[$property] = $propRef->getValue($value);
-            } catch (ReflectionException $e) {
-                $data[$property] = $value->$property;
+                $getter = function& ($object, $property) {
+                    $value = &\Closure::bind(function& () use ($property) { 
+                        $value = &$this->{$property};
+                        return $value;
+                    }, $object, $object)->__invoke();
+                    return $value;
+                };
+                $data[$property] = &$getter($value, $property);
+            } catch(\Exception $ex) {
+                $mess = 'Cannot bind closure to scope of internal class';
+                if(substr($ex->getMessage(), 0, strlen($mess)) != $mess)
+                    throw $ex;
+                
+                try {
+                    $propRef = $ref->getProperty($property);
+                    $propRef->setAccessible(true);
+                    $data[$property] = $propRef->getValue($value);
+                } catch (ReflectionException $e) {
+                    $data[$property] = $value->$property;
+                }
             }
         }
         return $data;
@@ -354,12 +388,13 @@ class JsonSerializer
      * @param  mixed $value
      * @return mixed
      */
-    protected function unserializeData($value)
+    protected function& unserializeData($value)
     {
         if (is_scalar($value) || $value === null) {
             return $value;
         }
 
+        
         if (isset($value[static::CLASS_IDENTIFIER_KEY])) {
             return $this->unserializeObject($value);
         }
@@ -371,7 +406,10 @@ class JsonSerializer
             return $this->closureSerializer->unserialize($value['value']);
         }
 
-        return array_map(array($this, __FUNCTION__), $value);
+        $arr = array_map(array($this, __FUNCTION__), $value);
+        // dd($value);
+        $this->arrayMapping[$this->objectMappingIndex++] = &$arr;
+        return $arr;
     }
 
     /**
@@ -424,7 +462,7 @@ class JsonSerializer
      * @return object
      * @throws JsonSerializerException
      */
-    protected function unserializeObject($value)
+    protected function& unserializeObject($value)
     {
         $className = $value[static::CLASS_IDENTIFIER_KEY];
         unset($value[static::CLASS_IDENTIFIER_KEY]);
@@ -432,6 +470,13 @@ class JsonSerializer
         if ($className[0] === '@') {
             $index = substr($className, 1);
             return $this->objectMapping[$index];
+        }
+
+        if ($className[0] === '[') {
+            $index = substr($className, 1, strlen($className) - 2);
+            // dd($index);
+            $arr = &$this->arrayMapping[$index];
+            return $arr;
         }
 
         if (array_key_exists($className, $this->customObjectSerializerMap)) {
@@ -463,22 +508,54 @@ class JsonSerializer
             return $obj;
         }
 
+        
+        if (method_exists($obj, '__wakeupprerestore')) {
+            $obj->__wakeupprerestore();
+        }
+
         $this->objectMapping[$this->objectMappingIndex++] = $obj;
         foreach ($value as $property => $propertyValue) {
             try {
+                $setter = function ($object, $property, &$value) {
+                    \Closure::bind(function () use ($property, &$value) { 
+                        $this->$property = &$value;
+                    }, $object, $object)->__invoke();
+                };
+                unset($pvalue);
+                $pvalue = &$this->unserializeData($propertyValue);
+                
                 $propRef = $ref->getProperty($property);
                 $propRef->setAccessible(true);
-                $propRef->setValue($obj, $this->unserializeData($propertyValue));
+                if(!$propRef->isStatic()) {
+                    try {
+                        $setter($obj, $property, $pvalue);
+                    } catch (\Throwable $ex) {
+                        $obj->{$property} = $pvalue;
+                    }
+                }
             } catch (ReflectionException $e) {
                 switch ($this->undefinedAttributeMode) {
-                    case static::UNDECLARED_PROPERTY_MODE_SET:
-                        $obj->$property = $this->unserializeData($propertyValue);
-                        break;
-                    case static::UNDECLARED_PROPERTY_MODE_IGNORE:
-                        break;
-                    case static::UNDECLARED_PROPERTY_MODE_EXCEPTION:
-                        throw new JsonSerializerException('Undefined attribute detected during unserialization');
-                        break;
+                case static::UNDECLARED_PROPERTY_MODE_SET:
+                    $obj->{$property} = &$pvalue;
+                    // $setter($obj, $property, $pvalue);
+                    break;
+                case static::UNDECLARED_PROPERTY_MODE_IGNORE:
+                    break;
+                case static::UNDECLARED_PROPERTY_MODE_EXCEPTION:
+                    throw new JsonSerializerException('Undefined attribute detected during unserialization');
+                    break;
+                }
+            } catch(\Exception $ex) {
+                $mess = 'Cannot bind closure to scope of internal class';
+                if(substr($ex->getMessage(), 0, strlen($mess)) != $mess)
+                    throw $ex;
+                
+                try {
+                    $propRef = $ref->getProperty($property);
+                    $propRef->setAccessible(true);
+                    $data[$property] = $propRef->getValue($value);
+                } catch (ReflectionException $e) {
+                    $data[$property] = $value->$property;
                 }
             }
         }
