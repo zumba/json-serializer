@@ -16,7 +16,7 @@ Supported features:
 - Encode/Decode of binary data
 - Support nested serialization
 - Support not declared properties on the original class definition (ie, properties in `stdClass`)
-- Support object recursion
+- Support object and array recursion
 - Closures (via 3rd party library. See details below)
 
 Unsupported serialization content:
@@ -29,6 +29,7 @@ Limitations:
 - Binary data containing null bytes (\u0000) as array keys cannot be properly decoded because of a json extension bug:
     - https://github.com/remicollet/pecl-json-c/issues/7
     - https://github.com/json-c/json-c/issues/108
+- References in internal php objects (stdClass and DateTime for example) 
 
 This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
