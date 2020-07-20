@@ -39,7 +39,7 @@ class JsonSerializer
      *
      * @var array
      */
-    protected $objectMapping = array();
+    protected $objectMapping = [];
 
     /**
      * Object mapping index
@@ -47,13 +47,6 @@ class JsonSerializer
      * @var integer
      */
     protected $objectMappingIndex = 0;
-
-    /**
-     * Support PRESERVE_ZERO_FRACTION json option
-     *
-     * @var boolean
-     */
-    protected $preserveZeroFractionSupport;
 
     /**
      * Closure serializer instance
@@ -84,9 +77,8 @@ class JsonSerializer
      */
     public function __construct(
         ClosureSerializerInterface $closureSerializer = null,
-        $customObjectSerializerMap = array()
+        $customObjectSerializerMap = []
     ) {
-        $this->preserveZeroFractionSupport = defined('JSON_PRESERVE_ZERO_FRACTION');
         $this->closureSerializer = $closureSerializer;
         $this->customObjectSerializerMap = (array)$customObjectSerializerMap;
     }
@@ -125,11 +117,7 @@ class JsonSerializer
      */
     protected function calculateEncodeOptions()
     {
-        $options = JSON_UNESCAPED_UNICODE;
-        if ($this->preserveZeroFractionSupport) {
-            $options |= JSON_PRESERVE_ZERO_FRACTION;
-        }
-        return $options;
+        return JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION;
     }
 
     /**
@@ -190,9 +178,6 @@ class JsonSerializer
      */
     protected function processEncodedValue($encoded)
     {
-        if (!$this->preserveZeroFractionSupport) {
-            $encoded = preg_replace('/"' . static::FLOAT_ADAPTER . '\((.*?)\)"/', '\1', $encoded);
-        }
         return $encoded;
     }
 
@@ -248,27 +233,22 @@ class JsonSerializer
     protected function serializeData($value)
     {
         if (is_scalar($value) || $value === null) {
-            if (!$this->preserveZeroFractionSupport && is_float($value) && ctype_digit((string)$value)) {
-                // Because the PHP bug #50224, the float numbers with no
-                // precision numbers are converted to integers when encoded
-                $value = static::FLOAT_ADAPTER . '(' . $value . '.0)';
-            }
             return $value;
         }
         if (is_resource($value)) {
             throw new JsonSerializerException('Resource is not supported in JsonSerializer');
         }
         if (is_array($value)) {
-            return array_map(array($this, __FUNCTION__), $value);
+            return array_map([$this, __FUNCTION__], $value);
         }
         if ($value instanceof \Closure) {
             if (!$this->closureSerializer) {
                 throw new JsonSerializerException('Closure serializer not given. Unable to serialize closure.');
             }
-            return array(
+            return [
                 static::CLOSURE_IDENTIFIER_KEY => true,
                 'value' => $this->closureSerializer->serialize($value)
-            );
+            ];
         }
         return $this->serializeObject($value);
     }
@@ -282,30 +262,30 @@ class JsonSerializer
     protected function serializeObject($value)
     {
         if ($this->objectStorage->contains($value)) {
-            return array(static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]);
+            return [static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]];
         }
         $this->objectStorage->attach($value, $this->objectMappingIndex++);
 
         $ref = new ReflectionClass($value);
         $className = $ref->getName();
         if (array_key_exists($className, $this->customObjectSerializerMap)) {
-            $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+            $data = [static::CLASS_IDENTIFIER_KEY => $className];
             $data += $this->customObjectSerializerMap[$className]->serialize($value);
             return $data;
         }
-        
-        $data = array(static::CLASS_IDENTIFIER_KEY => $className);
-        
+
+        $data = [static::CLASS_IDENTIFIER_KEY => $className];
+
         if ($value instanceof \DateTimeInterface) {
             return $data + (array) $value;
         }
 
         if ($value instanceof \SplDoublyLinkedList) {
-            return $data + array('value' => $value->serialize());
+            return $data + ['value' => $value->serialize()];
         }
 
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
-        $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
+        $data += array_map([$this, 'serializeData'], $this->extractObjectData($value, $ref, $paramsToSerialize));
         return $data;
     }
 
@@ -322,7 +302,7 @@ class JsonSerializer
             return $value->__sleep();
         }
 
-        $props = array();
+        $props = [];
         foreach ($ref->getProperties() as $prop) {
             $props[] = $prop->getName();
         }
@@ -339,7 +319,7 @@ class JsonSerializer
      */
     protected function extractObjectData($value, $ref, $properties)
     {
-        $data = array();
+        $data = [];
         foreach ($properties as $property) {
             try {
                 $propRef = $ref->getProperty($property);
@@ -375,7 +355,7 @@ class JsonSerializer
             return $this->closureSerializer->unserialize($value['value']);
         }
 
-        return array_map(array($this, __FUNCTION__), $value);
+        return array_map([$this, __FUNCTION__], $value);
     }
 
     /**
@@ -498,7 +478,7 @@ class JsonSerializer
      */
     protected function isSplList($className)
     {
-        return in_array($className, array('SplQueue', 'SplDoublyLinkedList', 'SplStack'));
+        return in_array($className, ['SplQueue', 'SplDoublyLinkedList', 'SplStack']);
     }
 
     protected function restoreUsingUnserialize($className, $attributes)
@@ -520,7 +500,7 @@ class JsonSerializer
     protected function reset()
     {
         $this->objectStorage = new SplObjectStorage();
-        $this->objectMapping = array();
+        $this->objectMapping = [];
         $this->objectMappingIndex = 0;
     }
 }

@@ -33,7 +33,7 @@ Limitations:
 This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 5.4 and tested until PHP 7.2*
+*Json Serializer requires PHP >= 7.0 and tested until PHP 7.4*
 
 ## Example
 
@@ -69,8 +69,8 @@ If you are not using composer, you can just copy the files from `src` folder in 
 ## Serializing Binary Strings
 
 Binary strings introduce two special identifiers in the final json: `@utf8encoded` and `@scalar`.
-`@utf8encoded` is an array of keys from the original data which have their value (or the keys themselves) 
-encoded from 8bit to UTF-8. This is how the serializer knows what to encode back from UTF-8 to 8bit when deserializing. 
+`@utf8encoded` is an array of keys from the original data which have their value (or the keys themselves)
+encoded from 8bit to UTF-8. This is how the serializer knows what to encode back from UTF-8 to 8bit when deserializing.
 Example:
 
 ```php
