@@ -2,7 +2,21 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.0.0] - 2020-07-20
+### Fixed
+- Fixed DateTime & DateTimeImmutable serialization in PHP 7.4+. Thanks @przemyslaw-bogusz
+- Testing for PHP 7.3 and 7.4
+### Changed
+- Minimum PHP version supported is now 7.0
+- Updated PHPUnit version to 6.x
+### Removed
+- Deprecated namespace `Zumba\Util`
+
+## [2.2.0] - 2018-02-07
+### Added
+- Allowing to change the undeclared property unserialization mode
+
+## [2.1.0] - 2016-05-22
 ### Changed
 - Throwing exception if cannot encode JSON when serializing
 - Throwing exception if cannot decode JSON when unserializing
