@@ -508,10 +508,6 @@ class JsonSerializerTest extends \PHPUnit_Framework_TestCase
      */
     public function testSerializeInvalidData()
     {
-        if (PHP_VERSION_ID < 50500) {
-            $this->markTestSkipped('PHP 5.4 raises a warning when encoding NAN, which fails the test.');
-        }
-
         $this->setExpectedException('Zumba\Exception\JsonSerializerException');
         $this->serializer->serialize(array(NAN));
     }
