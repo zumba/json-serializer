@@ -2,8 +2,8 @@
 
 namespace Zumba\JsonSerializer\Exception;
 
-use Zumba\Exception\JsonSerializerException as OriginalException;
+use RuntimeException;
 
-class JsonSerializerException extends OriginalException
+class JsonSerializerException extends RuntimeException
 {
 }
