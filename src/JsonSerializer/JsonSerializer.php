@@ -293,14 +293,18 @@ class JsonSerializer
             $data += $this->customObjectSerializerMap[$className]->serialize($value);
             return $data;
         }
-
-        $paramsToSerialize = $this->getObjectProperties($ref, $value);
+        
         $data = array(static::CLASS_IDENTIFIER_KEY => $className);
+        
+        if ($value instanceof \DateTimeInterface) {
+            return $data + (array) $value;
+        }
 
         if ($value instanceof \SplDoublyLinkedList) {
             return $data + array('value' => $value->serialize());
         }
 
+        $paramsToSerialize = $this->getObjectProperties($ref, $value);
         $data += array_map(array($this, 'serializeData'), $this->extractObjectData($value, $ref, $paramsToSerialize));
         return $data;
     }
