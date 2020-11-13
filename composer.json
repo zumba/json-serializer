@@ -20,7 +20,8 @@
     ],
     "require": {
         "php": ">=7.0.0",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "php-coveralls/php-coveralls": "^2.4"
     },
     "suggest": {
         "jeremeamia/superclosure": "Allow to serialize PHP closures"
