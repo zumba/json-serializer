@@ -7,6 +7,7 @@ use Zumba\JsonSerializer\Exception\JsonSerializerException;
 use stdClass;
 use SuperClosure\Serializer as ClosureSerializer;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 class JsonSerializerTest extends TestCase
 {
@@ -21,11 +22,11 @@ class JsonSerializerTest extends TestCase
     /**
      * Test case setup
      *
+     * @before
      * @return void
      */
-    public function setUp()
+    public function setUpSerializer()
     {
-        parent::setUp();
         $customObjectSerializerMap['Zumba\\JsonSerializer\\Test\\SupportClasses\\MyType'] = new \Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer();
         $this->serializer = new JsonSerializer(null, $customObjectSerializerMap);
     }
@@ -226,15 +227,18 @@ class JsonSerializerTest extends TestCase
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\AllVisibilities', $obj);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $obj->pub);
-        $this->assertAttributeSame('protected', 'prot', $obj);
-        $this->assertAttributeSame('dont tell anyone', 'priv', $obj);
+        $prop = new ReflectionProperty($obj, 'prot');
+        $prop->setAccessible(true);
+        $this->assertSame('protected', $prop->getValue($obj));
+        $prop = new ReflectionProperty($obj, 'priv');
+        $prop->setAccessible(true);
+        $this->assertSame('dont tell anyone', $prop->getValue($obj));
 
         $serialized = '{"instance":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
         $array = $this->serializer->unserialize($serialized);
         $this->assertTrue(is_array($array));
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $array['instance']);
     }
-
 
     /**
      * Test serialization of objects using the custom serializers
@@ -259,8 +263,8 @@ class JsonSerializerTest extends TestCase
         $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}';
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\MyType', $obj);
-        $this->assertAttributeSame('x', 'field1', $obj);
-        $this->assertAttributeSame('y', 'field2', $obj);
+        $this->assertSame('x', $obj->field1);
+        $this->assertSame('y', $obj->field2);
     }
 
     /**

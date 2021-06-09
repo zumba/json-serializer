@@ -26,7 +26,7 @@
         "jeremeamia/superclosure": "Allow to serialize PHP closures"
     },
     "require-dev": {
-        "phpunit/phpunit": "6.*"
+        "phpunit/phpunit": ">=6.0 <10.0"
     },
     "autoload": {
         "psr-4": {
