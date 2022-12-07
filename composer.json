@@ -33,5 +33,11 @@
             "Zumba\\": "src/",
             "Zumba\\JsonSerializer\\Test\\": "tests/"
         }
+    },
+    "archive": {
+        "exclude": [
+            "/tests",
+            "/phpunit.xml"
+        ]
     }
 }
