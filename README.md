@@ -111,16 +111,16 @@ To use the SuperClosure with JsonSerializer, just pass the SuperClosure object a
 on JsonSerializer constructor. Example:
 
 ```php
-$toBeSerialized = array(
-	'data' => array(1, 2, 3),
+$toBeSerialized = [
+	'data' => [1, 2, 3],
 	'worker' => function ($data) {
-		$double = array();
+		$double = [];
 		foreach ($data as $i => $number) {
 			$double[$i] = $number * 2;
 		}
 		return $double;
 	}
-);
+];
 
 $superClosure = new SuperClosure\Serializer();
 $jsonSerializer = new Zumba\JsonSerializer\JsonSerializer($superClosure);
