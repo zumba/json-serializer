@@ -240,6 +240,88 @@ class JsonSerializerTest extends TestCase
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $array['instance']);
     }
 
+
+    /**
+     * Test serialization of Enums
+     *
+     * @return void
+     */
+    public function testSerializeEnums() 
+    {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        $unitEnum = SupportEnums\MyUnitEnum::Hearts;
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"}';
+        $this->assertSame($expected, $this->serializer->serialize($unitEnum));
+
+        $backedEnum = SupportEnums\MyBackedEnum::Hearts;
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
+        $this->assertSame($expected, $this->serializer->serialize($backedEnum));
+    }
+
+    /**
+     * Test unserialization of Enums
+     *
+     * @return void
+     */
+    public function testUnserializeEnums() 
+    {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyUnitEnum', $obj);
+        $this->assertSame(SupportEnums\MyUnitEnum::Hearts, $obj);
+
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
+        $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
+
+        // wrong value of BackedEnum is ignored
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"S"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
+        $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
+        $this->assertSame(SupportEnums\MyBackedEnum::Hearts->value, $obj->value);
+    }
+
+    /**
+     * Test unserialization of wrong UnitEnum
+     *
+     * @return void
+     */
+    public function testUnserializeWrongUnitEnum()  {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        // bad case generate Error
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Circles"}';
+        $this->expectException(\Error::class);
+        $this->serializer->unserialize($serialized);
+    }
+
+    /**
+     * Test unserialization of wrong BackedEnum
+     *
+     * @return void
+     */
+    public function testUnserializeWrongBackedEnum()  {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        // bad case generate Error
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Circles","value":"C"}';
+        $this->expectException(\Error::class);
+        $this->serializer->unserialize($serialized);
+    }
+
     /**
      * Test serialization of objects using the custom serializers
      *
