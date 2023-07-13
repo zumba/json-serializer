@@ -434,6 +434,10 @@ class JsonSerializer
             return $obj;
         }
 
+        if (is_subclass_of($className, \UnitEnum::class)) {
+            return constant("$className::{$value['name']}");
+        }
+
         if (!$this->isSplList($className)) {
             $ref = new ReflectionClass($className);
             $obj = $ref->newInstanceWithoutConstructor();
