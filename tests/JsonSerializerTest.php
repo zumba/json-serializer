@@ -296,6 +296,10 @@ class JsonSerializerTest extends TestCase
         $date = new \DateTime('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
         $obj = $this->serializer->unserialize($this->serializer->serialize($date));
         $this->assertSame($date->getTimestamp(), $obj->getTimestamp());
+
+        $date = new \DateTimeImmutable('2014-06-15 12:00:00', new \DateTimeZone('UTC'));
+        $obj = $this->serializer->unserialize($this->serializer->serialize($date));
+        $this->assertSame($date->getTimestamp(), $obj->getTimestamp());
     }
 
     /**
