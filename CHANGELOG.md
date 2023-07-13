@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Support of UnitEnum and BackedEnum deserialization (PHP > 8.1)
+
 ## [3.0.0] - 2020-07-20
 ### Fixed
 - Fixed DateTime & DateTimeImmutable serialization in PHP 7.4+. Thanks @przemyslaw-bogusz
