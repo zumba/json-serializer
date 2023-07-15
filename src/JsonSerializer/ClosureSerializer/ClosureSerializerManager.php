@@ -15,6 +15,7 @@ class ClosureSerializerManager {
      * Prefered closure serializer
      */
     protected $preferred = array(
+        OpisClosureSerializer::class,
         SuperClosureSerializer::class
     );
 

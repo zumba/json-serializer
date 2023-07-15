@@ -80,7 +80,7 @@ class JsonSerializer
         $this->closureManager = new ClosureSerializer\ClosureSerializerManager();
         if ($closureSerializer) {
             trigger_error(
-                'Passing a ClosureSerializerInterface to the constructor is deprecated and will be removed in 5.0.0. Use addClosureSerializer() instead.',
+                'Passing a ClosureSerializerInterface to the constructor is deprecated and will be removed in 4.0.0. Use addClosureSerializer() instead.',
                 E_USER_DEPRECATED
             );
             $this->addClosureSerializer(new ClosureSerializer\SuperClosureSerializer($closureSerializer));

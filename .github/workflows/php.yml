@@ -24,7 +24,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
     - name: Install suggested dependencies
-      run: composer require jeremeamia/superclosure
+      run: composer require jeremeamia/superclosure opis/closure
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest

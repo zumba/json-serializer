@@ -23,7 +23,7 @@
         "ext-mbstring": "*"
     },
     "suggest": {
-        "jeremeamia/superclosure": "Allow to serialize PHP closures"
+        "opis/closure": "Allow to serialize PHP closures"
     },
     "require-dev": {
         "phpunit/phpunit": ">=6.0 <10.0"
