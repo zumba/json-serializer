@@ -50,6 +50,8 @@ class JsonSerializer
 
     /**
      * Closure manager
+     *
+     * @var ClosureSerializer\ClosureSerializerManager
      */
     protected $closureManager;
 
