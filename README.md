@@ -41,7 +41,7 @@ Limitations:
 This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 7.0 and tested until PHP 7.4*
+*Json Serializer requires PHP >= 7.0 and tested until PHP 8.2*
 
 ## Example
 
@@ -98,17 +98,16 @@ $json = $serializer->serialize($data);
 ```
 
 
-## Serializing Closures
+## Serializing Closure
 
-For serializing PHP closures you have to pass an object implementing `SuperClosure\SerializerInterface`.
-This interface is provided by the project [SuperClosure](https://github.com/jeremeamia/super_closure). This
-project also provides a closure serializer that implements this interface.
+For serializing PHP closures you can either use [OpisClosure](https://github.com/opis/closure) (preferred) or
+[SuperClosure](https://github.com/jeremeamia/super_closure) (the project is abandoned, so kept here for backward
+compatibility).
 
-Closure serialization has some limitations. Please check the SuperClosure project to check if it fits your
-needs.
+Closure serialization has some limitations. Please check the OpisClosure or SuperClosure project to check if it fits
+your needs.
 
-To use the SuperClosure with JsonSerializer, just pass the SuperClosure object as the first parameter
-on JsonSerializer constructor. Example:
+To use the OpisClosure with JsonSerializer, just add it to the closure serializer list. Example:
 
 ```php
 $toBeSerialized = [
@@ -122,13 +121,15 @@ $toBeSerialized = [
 	}
 ];
 
-$superClosure = new SuperClosure\Serializer();
-$jsonSerializer = new Zumba\JsonSerializer\JsonSerializer($superClosure);
+$jsonSerializer = new \Zumba\JsonSerializer\JsonSerializer();
+$jsonSerializer->addClosureSerializer(new \Zumba\JsonSerializer\ClosureSerializer\OpisClosureSerializer());
 $serialized = $jsonSerializer->serialize($toBeSerialized);
 ```
 
-PS: JsonSerializer does not have a hard dependency of SuperClosure. If you want to use both projects
-make sure you add both on your composer requirements.
+You can load multiple closure serializers in case you are migrating from SuperClosure to OpisClosure for example.
+
+PS: JsonSerializer does not have a hard dependency of OpisClosure or SuperClosure. If you want to use both projects
+make sure you add both on your composer requirements and load them with `addClosureSerializer()` method.
 
 ## Custom Serializers
 

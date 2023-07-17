@@ -2,9 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [3.1.0] - 2023-07-18
 ### Added
-- Support of UnitEnum and BackedEnum deserialization (PHP > 8.1)
+- Support of UnitEnum and BackedEnum deserialization (PHP > 8.1). Thanks @marcimat
+- Support to multiple closure serializers
+- Built in closure serializer using opis/closure
 ### Fixed
 - Fixed deprecated with DateTimeImmutable deserialization with PHP 8.2
 
