@@ -51,6 +51,12 @@ class ClosureSerializerManager {
         return current($this->closureSerializer);
     }
 
+    /**
+     * Get closure serializer
+     *
+     * @param string $classname
+     * @return ClosureSerializer|null
+     */
     public function getSerializer(string $classname)
     {
         if (isset($this->closureSerializer[$classname])) {
