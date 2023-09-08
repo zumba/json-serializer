@@ -260,6 +260,10 @@ class JsonSerializerTest extends TestCase
         $backedEnum = SupportEnums\MyBackedEnum::Hearts;
         $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
         $this->assertSame($expected, $this->serializer->serialize($backedEnum));
+
+        $intBackedEnum = SupportEnums\MyIntBackedEnum::One;
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1}';
+        $this->assertSame($expected, $this->serializer->serialize($intBackedEnum));
     }
 
     /**
@@ -282,6 +286,12 @@ class JsonSerializerTest extends TestCase
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
         $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
+
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"Two","value":2}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyIntBackedEnum', $obj);
+        $this->assertSame(SupportEnums\MyIntBackedEnum::Two, $obj);
+        $this->assertSame(SupportEnums\MyIntBackedEnum::Two->value, $obj->value);
 
         // wrong value of BackedEnum is ignored
         $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"S"}';
