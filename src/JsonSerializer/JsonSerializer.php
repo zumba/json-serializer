@@ -455,7 +455,9 @@ class JsonSerializer
         }
 
         if (is_subclass_of($className, \UnitEnum::class)) {
-            return constant("$className::{$value['name']}");
+            $obj = constant("$className::{$value['name']}");
+            $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            return $obj;
         }
 
         if (!$this->isSplList($className)) {
