@@ -81,10 +81,8 @@ class JsonSerializerTest extends TestCase
 
     /**
      * List of scalar data
-     *
-     * @return array
      */
-    public function scalarData()
+    public static function scalarData(): array
     {
         return array(
             array('testing', '"testing"'),
@@ -156,10 +154,8 @@ class JsonSerializerTest extends TestCase
 
     /**
      * List of array data
-     *
-     * @return array
      */
-    public function arrayNoObjectData()
+    public static function arrayNoObjectData(): array
     {
         return array(
             array(array(1, 2, 3), '[1,2,3]'),
