@@ -3,7 +3,7 @@
     "type": "library",
     "description": "Serialize PHP variables, including objects, in JSON format. Support to unserialize it too.",
     "keywords": ["json", "serialize", "serializer"],
-    "homepage": "http://tech.zumba.com",
+    "homepage": "https://tech.zumba.com",
     "license": "MIT",
     "scripts": {
         "test": "phpunit --colors=always"
@@ -33,11 +33,5 @@
             "Zumba\\": "src/",
             "Zumba\\JsonSerializer\\Test\\": "tests/"
         }
-    },
-    "archive": {
-        "exclude": [
-            "/tests",
-            "/phpunit.xml"
-        ]
     }
 }
