@@ -256,6 +256,33 @@ class JsonSerializerTest extends TestCase
         $backedEnum = SupportEnums\MyBackedEnum::Hearts;
         $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
         $this->assertSame($expected, $this->serializer->serialize($backedEnum));
+
+        $intBackedEnum = SupportEnums\MyIntBackedEnum::One;
+        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1}';
+        $this->assertSame($expected, $this->serializer->serialize($intBackedEnum));
+    }
+
+    /**
+     * Test serialization of multiple Enums
+     *
+     * @return void
+     */
+    public function testSerializeMultipleEnums()
+    {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        $obj = new stdClass();
+        $obj->enum1 = SupportEnums\MyUnitEnum::Hearts;
+        $obj->enum2 = SupportEnums\MyBackedEnum::Hearts;
+        $obj->enum3 = SupportEnums\MyIntBackedEnum::One;
+        $obj->enum4 = SupportEnums\MyUnitEnum::Hearts;
+        $obj->enum5 = SupportEnums\MyBackedEnum::Hearts;
+        $obj->enum6 = SupportEnums\MyIntBackedEnum::One;
+
+        $expected = '{"@type":"stdClass","enum1":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"},"enum2":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"},"enum3":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1},"enum4":{"@type":"@1"},"enum5":{"@type":"@2"},"enum6":{"@type":"@3"}}';
+        $this->assertSame($expected, $this->serializer->serialize($obj));
     }
 
     /**
@@ -279,12 +306,43 @@ class JsonSerializerTest extends TestCase
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
         $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
 
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"Two","value":2}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyIntBackedEnum', $obj);
+        $this->assertSame(SupportEnums\MyIntBackedEnum::Two, $obj);
+        $this->assertSame(SupportEnums\MyIntBackedEnum::Two->value, $obj->value);
+
         // wrong value of BackedEnum is ignored
         $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"S"}';
         $obj = $this->serializer->unserialize($serialized);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
         $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
         $this->assertSame(SupportEnums\MyBackedEnum::Hearts->value, $obj->value);
+    }
+
+    /**
+     * Test unserialization of multiple Enums
+     *
+     * @return void
+     */
+    public function testUnserializeMultipleEnums()
+    {
+        if (PHP_VERSION_ID < 80100) {
+            $this->markTestSkipped("Enums are only available since PHP 8.1");
+        }
+
+        $obj = new stdClass();
+        $obj->enum1 = SupportEnums\MyUnitEnum::Hearts;
+        $obj->enum2 = SupportEnums\MyBackedEnum::Hearts;
+        $obj->enum3 = SupportEnums\MyIntBackedEnum::One;
+        $obj->enum4 = SupportEnums\MyUnitEnum::Hearts;
+        $obj->enum5 = SupportEnums\MyBackedEnum::Hearts;
+        $obj->enum6 = SupportEnums\MyIntBackedEnum::One;
+
+        $serialized = '{"@type":"stdClass","enum1":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"},"enum2":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"},"enum3":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1},"enum4":{"@type":"@1"},"enum5":{"@type":"@2"},"enum6":{"@type":"@3"}}';
+        $actualObj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('stdClass', $actualObj);
+        $this->assertEquals($obj, $actualObj);
     }
 
     /**
