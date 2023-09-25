@@ -8,6 +8,13 @@ use Zumba\JsonSerializer\ClosureSerializer\SuperClosureSerializer;
 
 class ClosureSerializerManagerTest extends TestCase
 {
+    public function setUp(): void
+    {
+        if (! class_exists(\SuperClosure\SerializerInterface::class)) {
+            $this->markTestSkipped('Missing jeremeamia/superclosure to run this test');
+        }
+    }
+
     public function testAddSerializer() {
         $manager = new ClosureSerializerManager();
         $this->assertEmpty($manager->getSerializer('foo'));

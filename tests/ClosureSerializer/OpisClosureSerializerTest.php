@@ -7,6 +7,13 @@ use Zumba\JsonSerializer\ClosureSerializer\OpisClosureSerializer;
 
 class OpisClosureSerializerTest extends TestCase
 {
+    public function setUp(): void
+    {
+        if (! class_exists(\Opis\Closure\SerializableClosure::class)) {
+            $this->markTestSkipped('Missing opis/closure to run this test');
+        }
+    }
+
     public function testSerialize() {
         $closure = function() {
             return 'foo';
