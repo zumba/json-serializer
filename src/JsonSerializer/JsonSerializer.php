@@ -264,7 +264,8 @@ class JsonSerializer
             }
             return [
                 static::CLOSURE_IDENTIFIER_KEY => true,
-                'serializer' => $closureSerializer::class,
+                // Keep BC compat to PHP 7: Don't use "::class" on dynamic class names
+                'serializer' => get_class($closureSerializer),
                 'value' => $closureSerializer->serialize($value)
             ];
         }

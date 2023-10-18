@@ -27,7 +27,8 @@ class ClosureSerializerManager {
      */
     public function addSerializer(ClosureSerializer $closureSerializer)
     {
-        $classname = $closureSerializer::class;
+        // Keep BC compat to PHP 7: Don't use "::class" on dynamic class names
+        $classname = get_class($closureSerializer);
         $this->closureSerializer[$classname] = $closureSerializer;
         return $this;
     }
