@@ -26,6 +26,7 @@ class JsonSerializerTest extends TestCase
      * @before
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\Before]
     public function setUpSerializer()
     {
         $customObjectSerializerMap['Zumba\\JsonSerializer\\Test\\SupportClasses\\MyType'] = new \Zumba\JsonSerializer\Test\SupportClasses\MyTypeSerializer();
@@ -40,6 +41,7 @@ class JsonSerializerTest extends TestCase
      * @param        string $jsoned
      * @return       void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('scalarData')]
     public function testSerializeScalar($scalar, $jsoned)
     {
         $this->assertSame($jsoned, $this->serializer->serialize($scalar));
@@ -74,6 +76,7 @@ class JsonSerializerTest extends TestCase
      * @param        string $jsoned
      * @return       void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('scalarData')]
     public function testUnserializeScalar($scalar, $jsoned)
     {
         $this->assertSame($scalar, $this->serializer->unserialize($jsoned));
@@ -134,6 +137,7 @@ class JsonSerializerTest extends TestCase
      * @param        string $jsoned
      * @return       void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('arrayNoObjectData')]
     public function testSerializeArrayNoObject($array, $jsoned)
     {
         $this->assertSame($jsoned, $this->serializer->serialize($array));
@@ -147,6 +151,7 @@ class JsonSerializerTest extends TestCase
      * @param        string $jsoned
      * @return       void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('arrayNoObjectData')]
     public function testUnserializeArrayNoObject($array, $jsoned)
     {
         $this->assertSame($array, $this->serializer->unserialize($jsoned));
