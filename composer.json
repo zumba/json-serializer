@@ -26,7 +26,7 @@
         "opis/closure": "Allow to serialize PHP closures"
     },
     "require-dev": {
-        "phpunit/phpunit": ">=6.0 <11.0"
+        "phpunit/phpunit": ">=8 <12.0"
     },
     "autoload": {
         "psr-4": {
