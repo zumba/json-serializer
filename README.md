@@ -41,7 +41,7 @@ Limitations:
 This project should not be confused with `JsonSerializable` interface added on PHP 5.4. This interface is used on
 `json_encode` to encode the objects. There is no unserialization with this interface, differently from this project.
 
-*Json Serializer requires PHP >= 7.0 and tested until PHP 8.2*
+*Json Serializer requires PHP >= 7.2 and tested until PHP 8.2*
 
 ## Example
 
