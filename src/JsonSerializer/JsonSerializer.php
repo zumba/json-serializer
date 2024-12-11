@@ -72,11 +72,11 @@ class JsonSerializer
     /**
      * Constructor.
      *
-     * @param ClosureSerializerInterface $closureSerializer This parameter is deprecated and will be removed in 5.0.0. Use addClosureSerializer() instead.
+     * @param ClosureSerializerInterface|null $closureSerializer This parameter is deprecated and will be removed in 5.0.0. Use addClosureSerializer() instead.
      * @param array                      $customObjectSerializerMap
      */
     public function __construct(
-        ClosureSerializerInterface $closureSerializer = null,
+        ?ClosureSerializerInterface $closureSerializer = null,
         $customObjectSerializerMap = []
     ) {
         $this->closureManager = new ClosureSerializer\ClosureSerializerManager();
