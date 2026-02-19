@@ -851,6 +851,21 @@ class JsonSerializerTest extends TestCase
         $this->assertTrue($list->serialize() === $unserialized->serialize());
     }
 
+    /**
+     * Test serialization of an object with an uninitialized typed property
+     *
+     * @return void
+     */
+    public function testSerializeObjectWithUninitializedTypedProperty()
+    {
+        $obj = new \Zumba\JsonSerializer\Test\SupportClasses\UninitializedTypedProperty();
+        $serialized = $this->serializer->serialize($obj);
+        $this->assertNotNull($serialized);
+        $unserialized = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf(\Zumba\JsonSerializer\Test\SupportClasses\UninitializedTypedProperty::class, $unserialized);
+        $this->assertSame('test', $unserialized->name);
+    }
+
     // -------------------------------------------------------------------------
     // Security: class allowlist (CVE fix for insecure deserialization / CWE-502)
     // -------------------------------------------------------------------------

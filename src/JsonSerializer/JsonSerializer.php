@@ -371,6 +371,9 @@ class JsonSerializer
             try {
                 $propRef = $ref->getProperty($property);
                 $propRef->setAccessible(true);
+                if (!$propRef->isInitialized($value)) {
+                    continue;
+                }
                 $data[$property] = $propRef->getValue($value);
             } catch (ReflectionException $e) {
                 $data[$property] = $value->$property;
