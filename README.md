@@ -43,6 +43,47 @@ This project should not be confused with `JsonSerializable` interface added on P
 
 *Json Serializer requires PHP >= 7.2 and tested until PHP 8.4*
 
+## Security: do not unserialize untrusted input
+
+> **Warning**
+> Never pass untrusted data (user input, third-party API responses, cookies, etc.)
+> to `unserialize()` without first restricting which classes may be instantiated.
+
+The JSON format used by this library embeds a `@type` key that names the PHP class
+to restore. Without restrictions an attacker who controls the JSON payload can
+cause **any class available in the autoloader to be instantiated**, including
+classes whose `__wakeup()` or `__destruct()` methods execute dangerous operations
+(remote code execution, file deletion, etc.).
+
+Use `setAllowedClasses()` to declare the exact set of classes your application
+expects to deserialize:
+
+```php
+$serializer = new Zumba\JsonSerializer\JsonSerializer();
+$serializer->setAllowedClasses([
+    MyApp\Model\User::class,
+    MyApp\Model\Order::class,
+]);
+
+// Safe: User and Order are allowed.
+$obj = $serializer->unserialize($jsonFromDatabase);
+
+// Throws JsonSerializerException: SomeOtherClass is not in the allowlist.
+$obj = $serializer->unserialize($attackerControlledJson);
+```
+
+`setAllowedClasses()` accepts:
+
+| Value | Behaviour |
+|---|---|
+| `null` *(default)* | No restriction — any known class can be instantiated. Keep this only for fully trusted, internally-generated JSON. |
+| `[]` (empty array) | All class instantiation is blocked. |
+| `['Foo', 'Bar']` | Only `Foo` and `Bar` (exact class names) may be instantiated. |
+
+Classes registered via the custom object serializer map are always allowed
+regardless of this setting, because they are explicitly configured by the
+developer.
+
 ## Example
 
 ```php
@@ -58,6 +99,7 @@ $serializer = new Zumba\JsonSerializer\JsonSerializer();
 $json = $serializer->serialize($instance);
 // $json will contain the content {"@type":"MyCustomClass","isItAwesome":true,"nice":"very!"}
 
+$serializer->setAllowedClasses([MyCustomClass::class]);
 $restoredInstance = $serializer->unserialize($json);
 // $restoredInstance will be an instance of MyCustomClass
 ```

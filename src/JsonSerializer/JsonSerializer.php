@@ -70,6 +70,16 @@ class JsonSerializer
     protected $undefinedAttributeMode = self::UNDECLARED_PROPERTY_MODE_SET;
 
     /**
+     * Allowed classes for deserialization.
+     * Null means all classes are allowed (default, backward-compatible).
+     * An empty array means no classes are allowed.
+     * A non-empty array restricts deserialization to only the listed classes.
+     *
+     * @var array|null
+     */
+    protected $allowedClasses = null;
+
+    /**
      * Constructor.
      *
      * @param ClosureSerializerInterface|null $closureSerializer This parameter is deprecated and will be removed in 5.0.0. Use addClosureSerializer() instead.
@@ -236,6 +246,24 @@ class JsonSerializer
             throw new InvalidArgumentException('Invalid value.');
         }
         $this->undefinedAttributeMode = $value;
+        return $this;
+    }
+
+    /**
+     * Set the list of classes allowed during deserialization.
+     *
+     * When set to an array, only those classes can be instantiated via the
+     * "@type" key in a JSON payload. Classes registered in the custom object
+     * serializer map are always allowed regardless of this setting.
+     * Pass null (the default) to restore the unrestricted, backward-compatible
+     * behaviour. Pass an empty array to forbid all class instantiation.
+     *
+     * @param  array|null $allowedClasses
+     * @return self
+     */
+    public function setAllowedClasses(?array $allowedClasses): self
+    {
+        $this->allowedClasses = $allowedClasses;
         return $this;
     }
 
@@ -447,6 +475,13 @@ class JsonSerializer
 
         if (!class_exists($className)) {
             throw new JsonSerializerException('Unable to find class ' . $className);
+        }
+
+        if ($this->allowedClasses !== null && !in_array($className, $this->allowedClasses, true)) {
+            throw new JsonSerializerException(
+                'Class ' . $className . ' is not allowed for deserialization. ' .
+                'Use setAllowedClasses() to configure the list of allowed classes.'
+            );
         }
 
         if ($className === 'DateTime' || $className === 'DateTimeImmutable') {

@@ -850,4 +850,128 @@ class JsonSerializerTest extends TestCase
         $unserialized = $this->serializer->unserialize($this->serializer->serialize($list));
         $this->assertTrue($list->serialize() === $unserialized->serialize());
     }
+
+    // -------------------------------------------------------------------------
+    // Security: class allowlist (CVE fix for insecure deserialization / CWE-502)
+    // -------------------------------------------------------------------------
+
+    /**
+     * setAllowedClasses() must return $this for fluent chaining.
+     */
+    public function testSetAllowedClassesIsChainable(): void
+    {
+        $result = $this->serializer->setAllowedClasses(['stdClass']);
+        $this->assertSame($this->serializer, $result);
+    }
+
+    /**
+     * Default behaviour (allowedClasses = null) remains unchanged so that
+     * existing applications are not broken.
+     */
+    public function testDefaultBehaviourAllowsAllClasses(): void
+    {
+        // No setAllowedClasses() call → backward-compatible: any known class works.
+        $serialized = '{"@type":"stdClass","x":1}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('stdClass', $obj);
+    }
+
+    /**
+     * A class that IS in the allowlist must deserialize successfully.
+     */
+    public function testAllowedClassIsDeserialized(): void
+    {
+        $this->serializer->setAllowedClasses([
+            'stdClass',
+            'Zumba\\JsonSerializer\\Test\\SupportClasses\\EmptyClass',
+        ]);
+
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $obj);
+    }
+
+    /**
+     * A class NOT in the allowlist must throw JsonSerializerException and must
+     * never have its __wakeup() or __destruct() triggered (gadget chain blocked).
+     */
+    public function testUnlistedClassIsRejectedAndMagicMethodsNotCalled(): void
+    {
+        SupportClasses\GadgetClass::$wakeupCalled = false;
+        SupportClasses\GadgetClass::$destructCalled = false;
+
+        $this->serializer->setAllowedClasses(['stdClass']); // GadgetClass is NOT listed
+
+        $payload = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\GadgetClass","command":"id"}';
+
+        try {
+            $this->serializer->unserialize($payload);
+            $this->fail('Expected JsonSerializerException was not thrown.');
+        } catch (JsonSerializerException $e) {
+            $this->assertStringContainsString('not allowed', $e->getMessage());
+        }
+
+        // Ensure neither magic method was executed.
+        $this->assertFalse(
+            SupportClasses\GadgetClass::$wakeupCalled,
+            '__wakeup() must not be called on a blocked class.'
+        );
+    }
+
+    /**
+     * An empty allowlist must block every class, including stdClass.
+     */
+    public function testEmptyAllowedClassesBlocksAll(): void
+    {
+        $this->serializer->setAllowedClasses([]);
+
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize('{"@type":"stdClass"}');
+    }
+
+    /**
+     * Classes registered in the custom object serializer map must bypass the
+     * allowlist because they are explicitly trusted by the developer.
+     */
+    public function testCustomSerializerClassBypassesAllowlist(): void
+    {
+        // setUpSerializer() registered MyType with a custom serializer.
+        // Even with a restrictive allowlist, MyType must still deserialize.
+        $this->serializer->setAllowedClasses([]); // everything blocked
+
+        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\MyType","fields":"x y"}';
+        $obj = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\MyType', $obj);
+    }
+
+    /**
+     * Passing null to setAllowedClasses() restores the unrestricted default.
+     */
+    public function testSettingAllowedClassesToNullRestoresDefaultBehaviour(): void
+    {
+        $this->serializer->setAllowedClasses([]); // block everything
+        $this->serializer->setAllowedClasses(null); // restore default
+
+        $obj = $this->serializer->unserialize('{"@type":"stdClass"}');
+        $this->assertInstanceOf('stdClass', $obj);
+    }
+
+    /**
+     * Simulates the PoC from the security report: an attacker-supplied @type
+     * pointing to a gadget class must be rejected when an allowlist is active.
+     */
+    public function testSecurityReportPoCIsBlockedByAllowlist(): void
+    {
+        $this->serializer->setAllowedClasses(['stdClass']);
+
+        // Payload from the security report (adapted to a class defined in this
+        // test suite so that class_exists() returns true).
+        $payload = json_encode([
+            '@type'   => 'Zumba\\JsonSerializer\\Test\\SupportClasses\\GadgetClass',
+            'command' => 'id',
+        ]);
+
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize($payload);
+    }
 }
