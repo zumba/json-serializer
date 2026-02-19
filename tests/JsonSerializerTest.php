@@ -244,6 +244,29 @@ class JsonSerializerTest extends TestCase
 
 
     /**
+     * Test serialization/unserialization of objects with parent class private properties
+     *
+     * @return void
+     */
+    public function testSerializeObjectWithParentPrivateProperty()
+    {
+        $obj = new SupportClasses\ChildWithParentPrivate();
+        $serialized = $this->serializer->serialize($obj);
+        $this->assertStringContainsString('"parentPrivate":"parentPrivateValue"', $serialized);
+        $this->assertStringContainsString('"childPublic":"childPublicValue"', $serialized);
+        $this->assertStringContainsString('"childPrivate":"childPrivateValue"', $serialized);
+        $this->assertStringContainsString('"parentPublic":"parentPublicValue"', $serialized);
+
+        /** @var SupportClasses\ChildWithParentPrivate $restored */
+        $restored = $this->serializer->unserialize($serialized);
+        $this->assertInstanceOf(SupportClasses\ChildWithParentPrivate::class, $restored);
+        $this->assertSame('parentPrivateValue', $restored->getParentPrivate());
+        $this->assertSame('childPublicValue', $restored->childPublic);
+        $this->assertSame('parentPublicValue', $restored->parentPublic);
+    }
+
+
+    /**
      * Test serialization of Enums
      *
      * @return void

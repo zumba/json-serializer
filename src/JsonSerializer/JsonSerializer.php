@@ -353,7 +353,39 @@ class JsonSerializer
         foreach ($ref->getProperties() as $prop) {
             $props[] = $prop->getName();
         }
+
+        // Private properties of parent classes are not returned by getProperties() on the child class,
+        // so we traverse the parent chain to collect them.
+        $parentRef = $ref->getParentClass();
+        while ($parentRef !== false) {
+            foreach ($parentRef->getProperties(\ReflectionProperty::IS_PRIVATE) as $prop) {
+                $props[] = $prop->getName();
+            }
+            $parentRef = $parentRef->getParentClass();
+        }
+
         return array_unique(array_merge($props, array_keys(get_object_vars($value))));
+    }
+
+    /**
+     * Find a ReflectionProperty by traversing the class hierarchy (needed for parent private properties)
+     *
+     * @param  ReflectionClass $ref
+     * @param  string          $name
+     * @return \ReflectionProperty
+     * @throws ReflectionException
+     */
+    protected function getReflectionProperty($ref, $name)
+    {
+        $classRef = $ref;
+        while ($classRef !== false) {
+            try {
+                return $classRef->getProperty($name);
+            } catch (ReflectionException $e) {
+                $classRef = $classRef->getParentClass();
+            }
+        }
+        throw new ReflectionException('Property ' . $name . ' not found in class ' . $ref->getName() . ' or its parents');
     }
 
     /**
@@ -369,7 +401,7 @@ class JsonSerializer
         $data = [];
         foreach ($properties as $property) {
             try {
-                $propRef = $ref->getProperty($property);
+                $propRef = $this->getReflectionProperty($ref, $property);
                 $propRef->setAccessible(true);
                 if (!$propRef->isInitialized($value)) {
                     continue;
@@ -515,7 +547,7 @@ class JsonSerializer
         $this->objectMapping[$this->objectMappingIndex++] = $obj;
         foreach ($value as $property => $propertyValue) {
             try {
-                $propRef = $ref->getProperty($property);
+                $propRef = $this->getReflectionProperty($ref, $property);
                 $propRef->setAccessible(true);
                 $propRef->setValue($obj, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
