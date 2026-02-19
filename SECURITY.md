@@ -11,7 +11,7 @@
 
 If you discover a security vulnerability in this project, **please do not report it via public GitHub issues**.
 
-Instead, please email [engineering@zumba.com](mailto:engineering@zumba.com) with:
+Instead, please email [security@zumba.com](mailto:security@zumba.com) with:
 
 - A description of the vulnerability
 - Steps to reproduce the issue
