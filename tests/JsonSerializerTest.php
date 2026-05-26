@@ -230,10 +230,14 @@ class JsonSerializerTest extends TestCase
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\AllVisibilities', $obj);
         $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportClasses\EmptyClass', $obj->pub);
         $prop = new ReflectionProperty($obj, 'prot');
-        $prop->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $prop->setAccessible(true);
+        }
         $this->assertSame('protected', $prop->getValue($obj));
         $prop = new ReflectionProperty($obj, 'priv');
-        $prop->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $prop->setAccessible(true);
+        }
         $this->assertSame('dont tell anyone', $prop->getValue($obj));
 
         $serialized = '{"instance":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\EmptyClass"}}';
@@ -263,146 +267,6 @@ class JsonSerializerTest extends TestCase
         $this->assertSame('parentPrivateValue', $restored->getParentPrivate());
         $this->assertSame('childPublicValue', $restored->childPublic);
         $this->assertSame('parentPublicValue', $restored->parentPublic);
-    }
-
-
-    /**
-     * Test serialization of Enums
-     *
-     * @return void
-     */
-    public function testSerializeEnums()
-    {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        $unitEnum = SupportEnums\MyUnitEnum::Hearts;
-        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"}';
-        $this->assertSame($expected, $this->serializer->serialize($unitEnum));
-
-        $backedEnum = SupportEnums\MyBackedEnum::Hearts;
-        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
-        $this->assertSame($expected, $this->serializer->serialize($backedEnum));
-
-        $intBackedEnum = SupportEnums\MyIntBackedEnum::One;
-        $expected = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1}';
-        $this->assertSame($expected, $this->serializer->serialize($intBackedEnum));
-    }
-
-    /**
-     * Test serialization of multiple Enums
-     *
-     * @return void
-     */
-    public function testSerializeMultipleEnums()
-    {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        $obj = new stdClass();
-        $obj->enum1 = SupportEnums\MyUnitEnum::Hearts;
-        $obj->enum2 = SupportEnums\MyBackedEnum::Hearts;
-        $obj->enum3 = SupportEnums\MyIntBackedEnum::One;
-        $obj->enum4 = SupportEnums\MyUnitEnum::Hearts;
-        $obj->enum5 = SupportEnums\MyBackedEnum::Hearts;
-        $obj->enum6 = SupportEnums\MyIntBackedEnum::One;
-
-        $expected = '{"@type":"stdClass","enum1":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"},"enum2":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"},"enum3":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1},"enum4":{"@type":"@1"},"enum5":{"@type":"@2"},"enum6":{"@type":"@3"}}';
-        $this->assertSame($expected, $this->serializer->serialize($obj));
-    }
-
-    /**
-     * Test unserialization of Enums
-     *
-     * @return void
-     */
-    public function testUnserializeEnums()
-    {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"}';
-        $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyUnitEnum', $obj);
-        $this->assertSame(SupportEnums\MyUnitEnum::Hearts, $obj);
-
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"}';
-        $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
-        $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
-
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"Two","value":2}';
-        $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyIntBackedEnum', $obj);
-        $this->assertSame(SupportEnums\MyIntBackedEnum::Two, $obj);
-        $this->assertSame(SupportEnums\MyIntBackedEnum::Two->value, $obj->value);
-
-        // wrong value of BackedEnum is ignored
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"S"}';
-        $obj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('Zumba\JsonSerializer\Test\SupportEnums\MyBackedEnum', $obj);
-        $this->assertSame(SupportEnums\MyBackedEnum::Hearts, $obj);
-        $this->assertSame(SupportEnums\MyBackedEnum::Hearts->value, $obj->value);
-    }
-
-    /**
-     * Test unserialization of multiple Enums
-     *
-     * @return void
-     */
-    public function testUnserializeMultipleEnums()
-    {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        $obj = new stdClass();
-        $obj->enum1 = SupportEnums\MyUnitEnum::Hearts;
-        $obj->enum2 = SupportEnums\MyBackedEnum::Hearts;
-        $obj->enum3 = SupportEnums\MyIntBackedEnum::One;
-        $obj->enum4 = SupportEnums\MyUnitEnum::Hearts;
-        $obj->enum5 = SupportEnums\MyBackedEnum::Hearts;
-        $obj->enum6 = SupportEnums\MyIntBackedEnum::One;
-
-        $serialized = '{"@type":"stdClass","enum1":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Hearts"},"enum2":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Hearts","value":"H"},"enum3":{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyIntBackedEnum","name":"One","value":1},"enum4":{"@type":"@1"},"enum5":{"@type":"@2"},"enum6":{"@type":"@3"}}';
-        $actualObj = $this->serializer->unserialize($serialized);
-        $this->assertInstanceOf('stdClass', $actualObj);
-        $this->assertEquals($obj, $actualObj);
-    }
-
-    /**
-     * Test unserialization of wrong UnitEnum
-     *
-     * @return void
-     */
-    public function testUnserializeWrongUnitEnum()  {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        // bad case generate Error
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyUnitEnum","name":"Circles"}';
-        $this->expectException(\Error::class);
-        $this->serializer->unserialize($serialized);
-    }
-
-    /**
-     * Test unserialization of wrong BackedEnum
-     *
-     * @return void
-     */
-    public function testUnserializeWrongBackedEnum()  {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped("Enums are only available since PHP 8.1");
-        }
-
-        // bad case generate Error
-        $serialized = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportEnums\\\\MyBackedEnum","name":"Circles","value":"C"}';
-        $this->expectException(\Error::class);
-        $this->serializer->unserialize($serialized);
     }
 
     /**
@@ -479,7 +343,20 @@ class JsonSerializerTest extends TestCase
         }
 
         $closureSerializer = new SuperClosureSerializer();
+
+        $message = '';
+        set_error_handler(static function (int $errno, string $errstr) use (&$message) {
+            $message = $errstr;
+        }, E_USER_DEPRECATED);
+
         $serializer = new JsonSerializer($closureSerializer);
+
+        restore_error_handler();
+        $this->assertSame(
+            'Passing a ClosureSerializerInterface to the constructor is deprecated and will be removed in 4.0.0. Use addClosureSerializer() instead.',
+            $message
+        );
+
         $serialized = $serializer->serialize(
             array(
             'func' => function () {
@@ -582,7 +459,6 @@ class JsonSerializerTest extends TestCase
 
         // Make sure it was serialized with SuperClosure
         $serialized = $serializer->serialize($serializeData);
-        echo $serialized;
         $this->assertGreaterThanOrEqual(0, strpos($serialized, 'SuperClosure'));
         $this->assertFalse(strpos($serialized, 'OpisClosure'));
 
@@ -613,7 +489,8 @@ class JsonSerializerTest extends TestCase
         }
 
         $closureSerializer = new SuperClosureSerializer();
-        $serializer = new JsonSerializer($closureSerializer);
+        $serializer = new JsonSerializer();
+        $serializer->addClosureSerializer(new ClosureSerializer\SuperClosureSerializer($closureSerializer));
         $serialized = $serializer->serialize(
             array(
             'func' => function () {
@@ -878,7 +755,10 @@ class JsonSerializerTest extends TestCase
      * Test serialization of an object with an uninitialized typed property
      *
      * @return void
+     *
+     * @requires PHP >= 7.4
      */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
     public function testSerializeObjectWithUninitializedTypedProperty()
     {
         $obj = new \Zumba\JsonSerializer\Test\SupportClasses\UninitializedTypedProperty();
@@ -932,7 +812,10 @@ class JsonSerializerTest extends TestCase
     /**
      * A class NOT in the allowlist must throw JsonSerializerException and must
      * never have its __wakeup() or __destruct() triggered (gadget chain blocked).
+     *
+     * @requires PHP >= 7.4
      */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
     public function testUnlistedClassIsRejectedAndMagicMethodsNotCalled(): void
     {
         SupportClasses\GadgetClass::$wakeupCalled = false;
@@ -952,6 +835,36 @@ class JsonSerializerTest extends TestCase
         // Ensure neither magic method was executed.
         $this->assertFalse(
             SupportClasses\GadgetClass::$wakeupCalled,
+            '__wakeup() must not be called on a blocked class.'
+        );
+    }
+
+    /**
+     * A class NOT in the allowlist must throw JsonSerializerException and must
+     * never have its __wakeup() or __destruct() triggered (gadget chain blocked).
+     *
+     * @requires PHP < 7.4
+     */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4')]
+    public function testUnlistedClassIsRejectedAndMagicMethodsNotCalled2(): void
+    {
+        SupportClasses\GadgetClassWithoutTypes::$wakeupCalled = false;
+        SupportClasses\GadgetClassWithoutTypes::$destructCalled = false;
+
+        $this->serializer->setAllowedClasses(['stdClass']); // GadgetClass is NOT listed
+
+        $payload = '{"@type":"Zumba\\\\JsonSerializer\\\\Test\\\\SupportClasses\\\\GadgetClassWithoutTypes","command":"id"}';
+
+        try {
+            $this->serializer->unserialize($payload);
+            $this->fail('Expected JsonSerializerException was not thrown.');
+        } catch (JsonSerializerException $e) {
+            $this->assertStringContainsString('not allowed', $e->getMessage());
+        }
+
+        // Ensure neither magic method was executed.
+        $this->assertFalse(
+            SupportClasses\GadgetClassWithoutTypes::$wakeupCalled,
             '__wakeup() must not be called on a blocked class.'
         );
     }
@@ -997,7 +910,10 @@ class JsonSerializerTest extends TestCase
     /**
      * Simulates the PoC from the security report: an attacker-supplied @type
      * pointing to a gadget class must be rejected when an allowlist is active.
+     *
+     * @requires PHP >= 7.4
      */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
     public function testSecurityReportPoCIsBlockedByAllowlist(): void
     {
         $this->serializer->setAllowedClasses(['stdClass']);
@@ -1006,6 +922,28 @@ class JsonSerializerTest extends TestCase
         // test suite so that class_exists() returns true).
         $payload = json_encode([
             '@type'   => 'Zumba\\JsonSerializer\\Test\\SupportClasses\\GadgetClass',
+            'command' => 'id',
+        ]);
+
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize($payload);
+    }
+
+    /**
+     * Simulates the PoC from the security report: an attacker-supplied @type
+     * pointing to a gadget class must be rejected when an allowlist is active.
+     *
+     * @requires PHP < 7.4
+     */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4')]
+    public function testSecurityReportPoCIsBlockedByAllowlist2(): void
+    {
+        $this->serializer->setAllowedClasses(['stdClass']);
+
+        // Payload from the security report (adapted to a class defined in this
+        // test suite so that class_exists() returns true).
+        $payload = json_encode([
+            '@type'   => 'Zumba\\JsonSerializer\\Test\\SupportClasses\\GadgetClassWithoutTypes',
             'command' => 'id',
         ]);
 
