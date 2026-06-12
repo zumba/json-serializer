@@ -548,7 +548,9 @@ class JsonSerializer
         foreach ($value as $property => $propertyValue) {
             try {
                 $propRef = $this->getReflectionProperty($ref, $property);
-                $propRef->setAccessible(true);
+                if (version_compare(PHP_VERSION, '8.1.0') < 0) {
+                    $propRef->setAccessible(true);
+                }
                 $propRef->setValue($obj, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
                 switch ($this->undefinedAttributeMode) {
