@@ -9,7 +9,9 @@
 		 colors="true">
 	<testsuites>
 		<testsuite name="JsonSerializerTests">
-			<directory>./tests</directory>
+			<file phpVersion="8.1.0">./tests/EnumSerializationTest.php</file>
+			<file>./tests/JsonSerializerTest.php</file>
+			<directory>./tests/ClosureSerializer</directory>
 		</testsuite>
 	</testsuites>
 	<filter>

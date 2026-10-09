@@ -10,7 +10,7 @@ class ClosureSerializerManagerTest extends TestCase
 {
     public function setUp(): void
     {
-        if (! class_exists(\SuperClosure\SerializerInterface::class)) {
+        if (! interface_exists(\SuperClosure\SerializerInterface::class)) {
             $this->markTestSkipped('Missing jeremeamia/superclosure to run this test');
         }
     }
