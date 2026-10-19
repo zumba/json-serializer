@@ -308,10 +308,10 @@ class JsonSerializer
      */
     protected function serializeObject($value)
     {
-        if ($this->objectStorage->contains($value)) {
+        if ($this->objectStorage->offsetExists($value)) {
             return [static::CLASS_IDENTIFIER_KEY => '@' . $this->objectStorage[$value]];
         }
-        $this->objectStorage->attach($value, $this->objectMappingIndex++);
+        $this->objectStorage->offsetSet($value, $this->objectMappingIndex++);
 
         $ref = new ReflectionClass($value);
         $className = $ref->getName();
@@ -402,8 +402,10 @@ class JsonSerializer
         foreach ($properties as $property) {
             try {
                 $propRef = $this->getReflectionProperty($ref, $property);
-                $propRef->setAccessible(true);
-                if (!$propRef->isInitialized($value)) {
+                if (PHP_VERSION_ID < 80100) {
+                    $propRef->setAccessible(true);
+                }
+                if (PHP_VERSION_ID >= 70400 && !$propRef->isInitialized($value)) {
                     continue;
                 }
                 $data[$property] = $propRef->getValue($value);
@@ -548,7 +550,9 @@ class JsonSerializer
         foreach ($value as $property => $propertyValue) {
             try {
                 $propRef = $this->getReflectionProperty($ref, $property);
-                $propRef->setAccessible(true);
+                if (PHP_VERSION_ID < 80100) {
+                    $propRef->setAccessible(true);
+                }
                 $propRef->setValue($obj, $this->unserializeData($propertyValue));
             } catch (ReflectionException $e) {
                 switch ($this->undefinedAttributeMode) {

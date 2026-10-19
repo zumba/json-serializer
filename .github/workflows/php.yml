@@ -12,24 +12,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php-version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
     name: PHP ${{ matrix.php-version }}
     steps:
     - uses: actions/checkout@v7
+
+    - name: Set up PHP ${{ matrix.php-version }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring
+
     - name: Validate composer.json and composer.lock
       run: composer validate
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v6
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+
     - name: Install suggested dependencies
-      run: composer require jeremeamia/superclosure opis/closure
-    - name: Install dependencies
-      if: steps.composer-cache.outputs.cache-hit != 'true'
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer require jeremeamia/superclosure opis/closure --no-update --no-interaction --ansi
+
+    - name: Install Composer dependencies
+      uses: ramsey/composer-install@v4
+
     - name: Run test suite
       run: vendor/bin/phpunit
