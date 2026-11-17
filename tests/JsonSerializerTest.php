@@ -756,9 +756,9 @@ class JsonSerializerTest extends TestCase
      *
      * @return void
      *
-     * @requires PHP >= 7.4
+     * @requires PHP >= 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
     public function testSerializeObjectWithUninitializedTypedProperty()
     {
         $obj = new \Zumba\JsonSerializer\Test\SupportClasses\UninitializedTypedProperty();
@@ -813,9 +813,9 @@ class JsonSerializerTest extends TestCase
      * A class NOT in the allowlist must throw JsonSerializerException and must
      * never have its __wakeup() or __destruct() triggered (gadget chain blocked).
      *
-     * @requires PHP >= 7.4
+     * @requires PHP >= 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
     public function testUnlistedClassIsRejectedAndMagicMethodsNotCalled(): void
     {
         SupportClasses\GadgetClass::$wakeupCalled = false;
@@ -843,9 +843,9 @@ class JsonSerializerTest extends TestCase
      * A class NOT in the allowlist must throw JsonSerializerException and must
      * never have its __wakeup() or __destruct() triggered (gadget chain blocked).
      *
-     * @requires PHP < 7.4
+     * @requires PHP < 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4.0')]
     public function testUnlistedClassIsRejectedAndMagicMethodsNotCalled2(): void
     {
         SupportClasses\GadgetClassWithoutTypes::$wakeupCalled = false;
@@ -911,9 +911,9 @@ class JsonSerializerTest extends TestCase
      * Simulates the PoC from the security report: an attacker-supplied @type
      * pointing to a gadget class must be rejected when an allowlist is active.
      *
-     * @requires PHP >= 7.4
+     * @requires PHP >= 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
     public function testSecurityReportPoCIsBlockedByAllowlist(): void
     {
         $this->serializer->setAllowedClasses(['stdClass']);
@@ -933,9 +933,9 @@ class JsonSerializerTest extends TestCase
      * Simulates the PoC from the security report: an attacker-supplied @type
      * pointing to a gadget class must be rejected when an allowlist is active.
      *
-     * @requires PHP < 7.4
+     * @requires PHP < 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('< 7.4.0')]
     public function testSecurityReportPoCIsBlockedByAllowlist2(): void
     {
         $this->serializer->setAllowedClasses(['stdClass']);
