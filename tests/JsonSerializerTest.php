@@ -950,4 +950,161 @@ class JsonSerializerTest extends TestCase
         $this->expectException(JsonSerializerException::class);
         $this->serializer->unserialize($payload);
     }
+
+    /**
+     * Lists must keep their element order, iterator mode and shared object
+     * references across a round trip.
+     *
+     * @dataProvider splListProvider
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('splListProvider')]
+    public function testSplListRoundTrip(string $className, ?int $mode): void
+    {
+        $shared = new \stdClass();
+        $shared->name = 'shared';
+        $list = new $className();
+        if ($mode !== null) {
+            $list->setIteratorMode($mode);
+        }
+        $list->push('first');
+        $list->push($shared);
+        $list->push([2, $shared]);
+
+        $result = $this->serializer->unserialize($this->serializer->serialize(['list' => $list, 'again' => $shared]));
+        $unserialized = $result['list'];
+
+        $this->assertInstanceOf($className, $unserialized);
+        $this->assertSame($list->getIteratorMode(), $unserialized->getIteratorMode());
+        $this->assertSame($list->serialize(), $unserialized->serialize());
+        $this->assertSame('first', $unserialized->bottom());
+        $this->assertSame($result['again'], $unserialized->top()[1]);
+    }
+
+    public static function splListProvider(): array
+    {
+        return [
+            'queue' => ['SplQueue', null],
+            'stack' => ['SplStack', null],
+            'list' => ['SplDoublyLinkedList', null],
+            'lifo list' => ['SplDoublyLinkedList', \SplDoublyLinkedList::IT_MODE_LIFO],
+            'delete list' => ['SplDoublyLinkedList', \SplDoublyLinkedList::IT_MODE_DELETE],
+            'subclass' => [SupportClasses\CustomQueue::class, null],
+        ];
+    }
+
+    /**
+     * A class outside the allowlist must not be instantiated from the
+     * native-serialized "value" that versions up to 3.2.5 wrote for lists.
+     *
+     * @dataProvider allowedSplListProvider
+     * @requires PHP >= 7.4.0
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('allowedSplListProvider')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
+    public function testAllowlistIsNotBypassedBySplListValue(string $className): void
+    {
+        $list = new \SplQueue();
+        $list->push(new SupportClasses\GadgetClass());
+        $payload = json_encode(['@type' => $className, 'value' => $list->serialize()]);
+        unset($list);
+        SupportClasses\GadgetClass::$wakeupCalled = false;
+        SupportClasses\GadgetClass::$destructCalled = false;
+
+        $this->serializer->setAllowedClasses([$className]);
+        $unserialized = $this->serializer->unserialize($payload);
+
+        $this->assertNotInstanceOf(SupportClasses\GadgetClass::class, $unserialized[0]);
+        $this->assertFalse(SupportClasses\GadgetClass::$wakeupCalled);
+        unset($unserialized);
+        $this->serializer = null;
+        $this->assertFalse(SupportClasses\GadgetClass::$destructCalled);
+    }
+
+    public static function allowedSplListProvider(): array
+    {
+        return [
+            'queue' => ['SplQueue'],
+            'subclass' => [SupportClasses\CustomQueue::class],
+        ];
+    }
+
+    /**
+     * Objects inside a list go through the allowlist like any other object.
+     *
+     * @requires PHP >= 7.4.0
+     */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
+    public function testAllowlistAppliesToSplListElements(): void
+    {
+        $list = new \SplQueue();
+        $list->push(new SupportClasses\GadgetClass());
+        $payload = $this->serializer->serialize($list);
+        unset($list);
+        SupportClasses\GadgetClass::$wakeupCalled = false;
+
+        $this->serializer->setAllowedClasses(['SplQueue']);
+        try {
+            $this->serializer->unserialize($payload);
+            $this->fail('Expected JsonSerializerException');
+        } catch (JsonSerializerException $e) {
+            $this->assertFalse(SupportClasses\GadgetClass::$wakeupCalled);
+        }
+
+        $this->serializer->setAllowedClasses(['SplQueue', SupportClasses\GadgetClass::class]);
+        $this->assertInstanceOf(SupportClasses\GadgetClass::class, $this->serializer->unserialize($payload)[0]);
+    }
+
+    /**
+     * Lists stored by versions up to 3.2.5 stay readable, with or without an
+     * allowlist.
+     *
+     * @dataProvider legacySplListProvider
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('legacySplListProvider')]
+    public function testLegacySplListPayloadIsReadable(?array $allowedClasses): void
+    {
+        $list = new \SplStack();
+        $list->push('fizz');
+        $list->push(42);
+        $payload = json_encode(['@type' => 'SplStack', 'value' => $list->serialize()]);
+
+        $this->serializer->setAllowedClasses($allowedClasses);
+        $unserialized = $this->serializer->unserialize($payload);
+
+        $this->assertInstanceOf('SplStack', $unserialized);
+        $this->assertSame($list->serialize(), $unserialized->serialize());
+    }
+
+    public static function legacySplListProvider(): array
+    {
+        return [
+            'no allowlist' => [null],
+            'allowlist' => [['SplStack']],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidLegacySplListProvider
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidLegacySplListProvider')]
+    public function testInvalidLegacySplListPayloadThrows(string $value): void
+    {
+        $this->serializer->setAllowedClasses(['SplQueue']);
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize(json_encode(['@type' => 'SplQueue', 'value' => $value]));
+    }
+
+    public static function invalidLegacySplListProvider(): array
+    {
+        return [
+            'malformed' => ['garbage'],
+            'frozen iterator mode' => ['i:6;:i:1;'],
+        ];
+    }
+
+    public function testInvalidSplListIteratorModeThrows(): void
+    {
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize('{"@type":"SplQueue","value":[1],"mode":2}');
+    }
 }

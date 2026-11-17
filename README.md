@@ -84,6 +84,14 @@ Classes registered via the custom object serializer map are always allowed
 regardless of this setting, because they are explicitly configured by the
 developer.
 
+The allowlist also applies to objects stored inside `SplDoublyLinkedList`,
+`SplQueue` and `SplStack`. Lists serialized by versions up to 3.2.5 are still
+readable. With an allowlist set, an object in such a list whose class is not
+allowed comes back as an inert `__PHP_Incomplete_Class`.
+
+The allowlist does not cover closures. Do not register a closure serializer
+with `addClosureSerializer()` on a serializer that reads untrusted input.
+
 ## Example
 
 ```php
