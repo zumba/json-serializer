@@ -655,11 +655,15 @@ class JsonSerializer
             return;
         }
         $wrapped = 'C:' . strlen($className) . ':"' . $className . '":' . strlen($serialized) . ':{' . $serialized . '}';
-        $list = @unserialize($wrapped, ['allowed_classes' => $this->allowedClasses]);
-        if (!$list instanceof \SplDoublyLinkedList) {
+        try {
+            $list = @unserialize($wrapped, ['allowed_classes' => $this->allowedClasses]);
+            if (!$list instanceof \SplDoublyLinkedList) {
+                throw new JsonSerializerException('Unable to unserialize ' . $className);
+            }
+            $obj->setIteratorMode($list->getIteratorMode());
+        } catch (\RuntimeException $e) {
             throw new JsonSerializerException('Unable to unserialize ' . $className);
         }
-        $obj->setIteratorMode($list->getIteratorMode());
         $count = count($list);
         $lifo = (bool)($list->getIteratorMode() & \SplDoublyLinkedList::IT_MODE_LIFO);
         for ($i = 0; $i < $count; $i++) {

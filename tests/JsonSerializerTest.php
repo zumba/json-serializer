@@ -1083,6 +1083,25 @@ class JsonSerializerTest extends TestCase
         ];
     }
 
+    /**
+     * @dataProvider invalidLegacySplListProvider
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidLegacySplListProvider')]
+    public function testInvalidLegacySplListPayloadThrows(string $value): void
+    {
+        $this->serializer->setAllowedClasses(['SplQueue']);
+        $this->expectException(JsonSerializerException::class);
+        $this->serializer->unserialize(json_encode(['@type' => 'SplQueue', 'value' => $value]));
+    }
+
+    public static function invalidLegacySplListProvider(): array
+    {
+        return [
+            'malformed' => ['garbage'],
+            'frozen iterator mode' => ['i:6;:i:1;'],
+        ];
+    }
+
     public function testInvalidSplListIteratorModeThrows(): void
     {
         $this->expectException(JsonSerializerException::class);
