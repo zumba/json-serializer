@@ -997,10 +997,10 @@ class JsonSerializerTest extends TestCase
      * native-serialized "value" that versions up to 3.2.5 wrote for lists.
      *
      * @dataProvider allowedSplListProvider
-     * @requires PHP >= 7.4
+     * @requires PHP >= 7.4.0
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('allowedSplListProvider')]
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
     public function testAllowlistIsNotBypassedBySplListValue(string $className): void
     {
         $list = new \SplQueue();
@@ -1031,9 +1031,9 @@ class JsonSerializerTest extends TestCase
     /**
      * Objects inside a list go through the allowlist like any other object.
      *
-     * @requires PHP >= 7.4
+     * @requires PHP >= 7.4.0
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4')]
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 7.4.0')]
     public function testAllowlistAppliesToSplListElements(): void
     {
         $list = new \SplQueue();
