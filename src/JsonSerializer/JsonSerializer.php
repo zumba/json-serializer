@@ -328,7 +328,7 @@ class JsonSerializer
         }
 
         if ($value instanceof \SplDoublyLinkedList) {
-            return $data + ['value' => $value->serialize()];
+            return $data + $this->serializeSplList($value);
         }
 
         $paramsToSerialize = $this->getObjectProperties($ref, $value);
@@ -541,8 +541,8 @@ class JsonSerializer
         }
 
         if ($obj instanceof \SplDoublyLinkedList) {
-            $obj->unserialize($value['value']);
             $this->objectMapping[$this->objectMappingIndex++] = $obj;
+            $this->unserializeSplList($obj, $className, $value);
             return $obj;
         }
 
@@ -580,6 +580,91 @@ class JsonSerializer
     protected function isSplList($className)
     {
         return in_array($className, ['SplQueue', 'SplDoublyLinkedList', 'SplStack']);
+    }
+
+    /**
+     * Serialize the elements of a list through this serializer, in storage
+     * order, so nested objects carry their own "@type".
+     *
+     * @param  \SplDoublyLinkedList $list
+     * @return array
+     */
+    protected function serializeSplList(\SplDoublyLinkedList $list)
+    {
+        $mode = $list->getIteratorMode();
+        $count = count($list);
+        // Offsets follow the iteration direction, push() follows storage order.
+        $lifo = (bool)($mode & \SplDoublyLinkedList::IT_MODE_LIFO);
+        $items = [];
+        for ($i = 0; $i < $count; $i++) {
+            $items[] = $this->serializeData($list[$lifo ? $count - 1 - $i : $i]);
+        }
+        return ['value' => $items, 'mode' => $mode];
+    }
+
+    /**
+     * Fill a list from its serialized form
+     *
+     * @param  \SplDoublyLinkedList $obj
+     * @param  string $className
+     * @param  array $value
+     * @return void
+     * @throws JsonSerializerException
+     */
+    protected function unserializeSplList(\SplDoublyLinkedList $obj, $className, $value)
+    {
+        $items = isset($value['value']) ? $value['value'] : [];
+        if (is_string($items)) {
+            $this->unserializeLegacySplList($obj, $className, $items);
+            return;
+        }
+        if (!is_array($items)) {
+            throw new JsonSerializerException('Invalid value for ' . $className);
+        }
+        if (isset($value['mode'])) {
+            if (!is_int($value['mode'])) {
+                throw new JsonSerializerException('Invalid iterator mode for ' . $className);
+            }
+            try {
+                $obj->setIteratorMode($value['mode']);
+            } catch (\RuntimeException $e) {
+                throw new JsonSerializerException('Invalid iterator mode for ' . $className);
+            }
+        }
+        foreach ($items as $item) {
+            $obj->push($this->unserializeData($item));
+        }
+    }
+
+    /**
+     * Read a list serialized by versions up to 3.2.5, where the elements are a
+     * PHP native-serialized string. Native unserialize() only knows the
+     * allowlist if it gets it as allowed_classes, and it turns any other class
+     * into an inert __PHP_Incomplete_Class.
+     *
+     * @param  \SplDoublyLinkedList $obj
+     * @param  string $className
+     * @param  string $serialized
+     * @return void
+     * @throws JsonSerializerException
+     */
+    protected function unserializeLegacySplList(\SplDoublyLinkedList $obj, $className, $serialized)
+    {
+        if ($this->allowedClasses === null) {
+            $obj->unserialize($serialized);
+            return;
+        }
+        $wrapped = 'C:' . strlen($className) . ':"' . $className . '":' . strlen($serialized) . ':{' . $serialized . '}';
+        $list = @unserialize($wrapped, ['allowed_classes' => $this->allowedClasses]);
+        if (!$list instanceof \SplDoublyLinkedList) {
+            throw new JsonSerializerException('Unable to unserialize ' . $className);
+        }
+        $obj->setIteratorMode($list->getIteratorMode());
+        $count = count($list);
+        $lifo = (bool)($list->getIteratorMode() & \SplDoublyLinkedList::IT_MODE_LIFO);
+        for ($i = 0; $i < $count; $i++) {
+            $obj->push($list[$lifo ? $count - 1 - $i : $i]);
+        }
     }
 
     protected function restoreUsingUnserialize($className, $attributes)
